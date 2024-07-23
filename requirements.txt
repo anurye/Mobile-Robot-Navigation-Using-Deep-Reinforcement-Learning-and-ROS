@@ -1,0 +1,2 @@
+squaternion==2023.9.2
+tensorboard==2.17.0
