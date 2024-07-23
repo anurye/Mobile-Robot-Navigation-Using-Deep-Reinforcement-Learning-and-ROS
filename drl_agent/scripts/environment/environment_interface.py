@@ -3,7 +3,13 @@
 import rclpy
 from rclpy.node import Node
 import numpy as np
-from drl_agent_interfaces.srv import Step, Reset, Seed, GetDimensions, SampleActionSpace
+from drl_agent_interfaces.srv import (
+    Step,
+    Reset,
+    Seed,
+    GetDimensions,
+    SampleActionSpace
+    )
 
 
 class EnvInterface(Node):
@@ -80,7 +86,7 @@ class EnvInterface(Node):
             rclpy.spin_until_future_complete(self, future)
         except Exception as e:
             self.get_logger().error(f"Service call /seed failed: {e}")
-        self.get_logger().info(f"\nEnvironment seed set to: {seed}, Success: {future.result().success}\n")
+        self.get_logger().info(f"Environment seed set to: {seed}, Success: {future.result().success}\n")
 
 
 def main(args=None):

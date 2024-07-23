@@ -33,9 +33,9 @@ class TestTD7(Node):
 		self.rl_agent = Agent(state_dim=state_dim, action_dim=action_dim, max_action=max_action)
 		try:
 			self.rl_agent.load(self.pytorch_models_dir, self.args.file_name)
-			self.get_logger().info("\n > Model parameters loaded successfuly\n")
+			self.get_logger().info(f'{"Model parameters loaded successfuly":-^50}')
 		except Exception as e:
-			self.get_logger().error("\n > Could not load network parameters :(\n")
+			self.get_logger().error(f'{"Could not load network parameters :(":-^50}')
 			sys.exit(-1)
 		
 		# Set seed for the test environment

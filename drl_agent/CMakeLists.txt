@@ -30,6 +30,7 @@ install(
   DIRECTORY
     launch
     scripts
+    config
   DESTINATION
     share/${PROJECT_NAME}/
 )
