@@ -1,5 +1,4 @@
 # Empty Request
 ---
-float64[24] state   # The situation after reseting
-                    # the world
+float32[] state     # The situation after reseting the world
 

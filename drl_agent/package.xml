@@ -13,7 +13,7 @@
   <test_depend>ament_lint_common</test_depend>
   
   <depend>drl_agent_description</depend>
-  <depend>custom_interfaces</depend>
+  <depend>drl_agent_interfaces</depend>
   <depend>rclpy</depend>
   <depend>gazebo_msgs</depend>
   <depend>geometry_msgs</depend>

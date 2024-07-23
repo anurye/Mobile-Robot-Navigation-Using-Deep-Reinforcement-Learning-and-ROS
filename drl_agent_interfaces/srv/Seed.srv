@@ -1,0 +1,3 @@
+int32 seed  # random seed
+---
+bool success

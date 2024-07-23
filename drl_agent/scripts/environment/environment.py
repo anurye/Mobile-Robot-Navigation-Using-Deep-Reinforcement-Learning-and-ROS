@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
+import argparse
 import math
 import random
 import time
@@ -21,36 +23,36 @@ from gazebo_msgs.msg import EntityState
 
 from std_srvs.srv import Empty
 from gazebo_msgs.srv import SetEntityState
-from drl_agent_interfaces.srv import Step, Reset
+from drl_agent_interfaces.srv import Step, Reset, Seed, GetDimensions, SampleActionSpace
 
 
-
-GOAL_REACHED_DIST = 0.3
-COLLISION_DIST = 0.35
+GOAL_THRESHOLD = 0.3
+COLLISION_THRESHOLD = 0.3
 TIME_DELTA = 0.1
 
 
-class GazeboEnv(Node):
-    ''' Environment Node for providing services required for DRL.
+class Environment(Node):
+    """Environment Node for providing services required for DRL.
 
-    This class provides functionalities to interact with an environment through ROS2 services. 
+    This class provides functionalities to interact with an environment through ROS2 services.
     The services include:
     - step: Take an action and get the resulting situation from the environment.
     - reset: Reset the environment and get initial observation.
-    
-    Parameters
-    ----------
-    environment_dim : int
-        Dimension of the environment for state representation.
-    '''
+    - get_dimensions: Get the dimensions of the state, action, and maximum action value.
+    """
 
-    def __init__(self, environment_dim):
-        super().__init__('gym_node')
+    def __init__(self, args):
+        super().__init__("gym_node")
 
-        self.sensors_callback_group = ReentrantCallbackGroup() # For sensor callbacks
-        self.clients_callback_group = MutuallyExclusiveCallbackGroup() # For service client callbacks
+        self.sensors_callback_group = ReentrantCallbackGroup()  # For sensor callbacks
+        self.clients_callback_group = MutuallyExclusiveCallbackGroup()  # For clients
+        # Define the dimensions of the state, action, and maximum action value
+        self.args = args
+        self.environment_dim = self.args.environment_dim
+        self.agent_dim = self.args.agent_dim
+        self.action_dim = self.args.action_dim
+        self.max_action = self.args.max_action
 
-        self.environment_dim = environment_dim
         self.odom_x = 0.0
         self.odom_y = 0.0
 
@@ -62,10 +64,9 @@ class GazeboEnv(Node):
         self.velodyne_data = np.ones(self.environment_dim) * 10
         self.last_odom = None
 
-        self.set_agent_state = EntityState() # To randomly change robot starting pose during reset
-        self.set_agent_state.name = 'pioneer_3dx'
-
-        self.set_box_state = EntityState() # To randomly change static obstacles pos during reset
+        self.set_agent_state = EntityState()
+        self.set_agent_state.name = "pioneer_3dx"
+        self.set_box_state = EntityState()
 
         # Define bens for grouping the velodyne_points
         self.gaps = [[-np.pi / 2 - 0.03, -np.pi / 2 + np.pi / self.environment_dim]]
@@ -75,60 +76,63 @@ class GazeboEnv(Node):
             )
         self.gaps[-1][-1] += 0.03
 
-        # Set up the ROS2 publishers, subscribers, services
-        self.set_model_state = self.create_client(SetEntityState, 
-                                                     'gazebo/set_entity_state',
-                                                     callback_group=self.clients_callback_group)
-        self.unpause = self.create_client(Empty, '/unpause_physics')
-        self.pause = self.create_client(Empty, '/pause_physics')
-        self.reset_proxy = self.create_client(Empty, '/reset_world')
+        # Initialize publishers
+        self.vel_pub = self.create_publisher(Twist, "/cmd_vel", 1)
+        self.publisher = self.create_publisher(MarkerArray, "goal_point", 3)
+        self.publisher2 = self.create_publisher(MarkerArray, "linear_velocity", 1)
+        self.publisher3 = self.create_publisher(MarkerArray, "angular_velocity", 1)
 
-        self.vel_pub = self.create_publisher(Twist, '/cmd_vel', 1)
-        self.publisher = self.create_publisher(MarkerArray, 'goal_point', 3)
-        self.publisher2 = self.create_publisher(MarkerArray, 'linear_velocity', 1)
-        self.publisher3 = self.create_publisher(MarkerArray, 'angular_velocity', 1)
-
+        # Initialize subscribers
         qos_profile = QoSProfile(depth=10, reliability=ReliabilityPolicy.RELIABLE)
         self.velodyne = self.create_subscription(
             PointCloud2,
-            '/velodyne_points', 
+            "/velodyne_points",
             self.velodyne_callback,
             qos_profile,
-            callback_group=self.sensors_callback_group)
-        self.velodyne 
+            callback_group=self.sensors_callback_group,
+        )
+        self.velodyne
         self.odom = self.create_subscription(
             Odometry,
-            '/odom', 
+            "/odom",
             self.odom_callback,
             qos_profile,
-            callback_group=self.sensors_callback_group)
+            callback_group=self.sensors_callback_group,
+        )
         self.odom
 
-        # Creating services
-        self.srv_step = self.create_service(Step, 'step', self.step_callback)
-        self.srv_reset = self.create_service(Reset, 'reset', self.reset_callback)
+        # Create services
+        self.srv_step = self.create_service(Step, "step", self.step_callback)
+        self.srv_reset = self.create_service(Reset, "reset", self.reset_callback)
+        self.srv_dimentions = self.create_service(
+            GetDimensions, "get_dimensions", self.get_dimensions_callback
+        )
+        self.srv_seed = self.create_service(Seed, "seed", self.seed_callback)
+        self.srv_action_space_sample = self.create_service(
+            SampleActionSpace, "action_space_sample", self.sample_action_callback
+        )
+
+        # Initialize clients
+        self.set_model_state = self.create_client(
+            SetEntityState,
+            "gazebo/set_entity_state",
+            callback_group=self.clients_callback_group,
+        )
+        self.unpause = self.create_client(Empty, "/unpause_physics")
+        self.pause = self.create_client(Empty, "/pause_physics")
+        self.reset_proxy = self.create_client(Empty, "/reset_world")
 
         # Service requests
         self.set_agent_state_req = SetEntityState.Request()
         self.set_static_obs_state_req = SetEntityState.Request()
 
     def velodyne_callback(self, v):
-        ''' Updates velodyne data
+        """Updates velodyne data
 
-        Reads velodyne point cloud data, converts it into distance data, and 
+        Reads velodyne point cloud data, converts it into distance data, and
         selects the minimum value for each angle range as a state representation.
-
-        Parameters
-        ----------
-        v : PointCloud2
-            Velodyne point cloud data.
-
-        Returns
-        -------
-        None
-        '''
-
-        data = list(pc2.read_points(v, skip_nans=False, field_names=('x', 'y', 'z')))
+        """
+        data = list(pc2.read_points(v, skip_nans=False, field_names=("x", "y", "z")))
         self.velodyne_data = np.ones(self.environment_dim) * 10
         for i in range(len(data)):
             if data[i][2] > -0.2:
@@ -144,40 +148,35 @@ class GazeboEnv(Node):
                         break
 
     def odom_callback(self, od_data):
-        ''' Updates the latest odometry data.
-
-        Parameters
-        ----------
-        od_data : Odometry
-            Odometry data
-
-        Returns
-        -------
-        None
-        '''
+        """Updates the latest odometry data"""
         self.last_odom = od_data
 
-    # Perform an action and read a new state
+    def seed_callback(self, request, response):
+        """Sets environment seed for reproducibility of the training process."""
+        np.random.seed(request.seed)
+        response.success = True
+        return response
+
+    def sample_action_callback(self, request, response):
+        """Samples an action from the action space."""
+        action = np.random.uniform(self.args.actions_low, self.args.actions_high)
+        response.action = np.array(action, dtype=np.float32).tolist()
+        return response
+
+    def get_dimensions_callback(self, request, response):
+        """Returns the dimensions of the state, action, and maximum action value"""
+        response.state_dim = self.environment_dim + self.agent_dim
+        response.action_dim = self.action_dim
+        response.max_action = self.max_action
+        return response
+
     def step_callback(self, request, response):
-        ''' Executes a step in the environment, updating the robot's state and reading the new state.
+        """Executes a step in the environment, updating the robot's state and reading the new state.
 
-        This involves publishing the robot action, unpausing the simulation, propagating the state for a set time interval, 
-        pausing the simulation, reading laser data to detect collisions, calculating the robot heading and distance to the goal, 
+        This involves publishing the robot action, unpausing the simulation, propagating the state for a set time interval,
+        pausing the simulation, reading laser data to detect collisions, calculating the robot heading and distance to the goal,
         and checking if the goal is reached and calculating the reward.
-        
-        Parameters
-        ----------
-        request : Request
-            Contains the action (linear and angular velocities) to be performed by the robot.
-        response : Response
-            The response object to be updated with the new state, reward, done flag, and target flag.
-
-        Returns
-        -------
-        Response
-            Updated response with the new state, reward, done flag, and target flag.
-        '''
-
+        """
         action = request.action
         target = False
 
@@ -189,22 +188,22 @@ class GazeboEnv(Node):
         self.publish_markers(action)
 
         while not self.unpause.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Service /unpause_physics not available, waiting again...')
+            self.get_logger().info("Service /unpause_physics not available, waiting again...")
         try:
             self.unpause.call_async(Empty.Request())
         except Exception as e:
-            self.get_logger().error('/unpause_physics service call failed: %s' % str(e))
+            self.get_logger().error("/unpause_physics service call failed: %s" % str(e))
 
         # propagate state for TIME_DELTA seconds
         time.sleep(TIME_DELTA)
 
         while not self.pause.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Service /pause_physics not available, waiting again...')
+            self.get_logger().info("Service /pause_physics not available, waiting again...")
         try:
             pass
             self.pause.call_async(Empty.Request())
         except Exception as e:
-            self.get_logger().error('/pause_physics service call failed: %s' % str(e))
+            self.get_logger().error("/pause_physics service call failed: %s" % str(e))
 
         # read velodyne laser state
         done, collision, min_laser = self.observe_collision(self.velodyne_data)
@@ -250,10 +249,10 @@ class GazeboEnv(Node):
             theta = np.pi - theta
 
         # Detect if the goal has been reached and give a large positive reward
-        if distance < GOAL_REACHED_DIST:
-            self.get_logger().info('+===-----------------===+')
-            self.get_logger().info('|     GOAL REACHED      |')
-            self.get_logger().info('+===-----------------===+')
+        if distance < GOAL_THRESHOLD:
+            self.get_logger().info("+===-----------------===+")
+            self.get_logger().info("|     GOAL REACHED      |")
+            self.get_logger().info("+===-----------------===+")
             target = True
             done = True
 
@@ -261,7 +260,7 @@ class GazeboEnv(Node):
         state = np.append(laser_state, robot_state)
         reward = self.get_reward(target, collision, action, min_laser)
 
-        response.state = state.tolist() # TODO: match service data type
+        response.state = state.tolist()
         response.reward = reward
         response.done = done
         response.target = target
@@ -269,33 +268,15 @@ class GazeboEnv(Node):
         return response
 
     def reset_callback(self, request, response):
-        ''' Resets the state of the environment and returns an initial observation.
+        """Resets the state of the environment and returns an initial observation, state"""
 
-        This involves resetting the simulation world, setting the robot to a random position and orientation, 
-        placing a random goal, scattering obstacles, and propagating the initial state by unpausing and then pausing the simulation. 
-        Additionally, it reads the initial laser data and calculates the distance and angle to the goal.
-
-        Parameters
-        ----------
-        request : Request
-            The reset request, it's empty request.
-        response : Response
-            The response object to be updated with the initial observation, state, after reset.
-
-        Returns
-        -------
-        response : Response
-            Updated response with the initial state.
-        '''
-
-        # Resets the state of the environment and returns an initial observation.
         while not self.reset_proxy.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Service /reset_world not available, waiting again...')
+            self.get_logger().info("Service /reset_world not available, waiting again...")
         try:
             self.reset_proxy.call_async(Empty.Request())
         except Exception as e:
-            self.get_logger().error('/reset_world service call failed: %s' % str(e))
-        
+            self.get_logger().error("/reset_world service call failed: %s" % str(e))
+
         angle = np.random.uniform(-np.pi, np.pi)
         quaternion = Quaternion.from_euler(0.0, 0.0, angle)
         object_state = self.set_agent_state
@@ -306,7 +287,7 @@ class GazeboEnv(Node):
         while not position_ok:
             x = np.random.uniform(-4.5, 4.5)
             y = np.random.uniform(-4.5, 4.5)
-            position_ok = self.check_goal_pos(x, y)
+            position_ok = self.check_pos(x, y)
         object_state.pose.position.x = x
         object_state.pose.position.y = y
         object_state.pose.position.z = 0.0
@@ -318,14 +299,11 @@ class GazeboEnv(Node):
         self.set_agent_state_req._state = object_state
 
         while not self.set_model_state.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Service /gazebo/set_entity_state not available, waiting again...')
+            self.get_logger().info("Service /gazebo/set_entity_state not available, waiting again...")
         try:
-            future = self.set_model_state.call_async(self.set_agent_state_req)
+            _ = self.set_model_state.call_async(self.set_agent_state_req)
         except Exception as e:
-            self.get_logger().error('/gazebo/set_entity_state service call failed: %s' % str(e))
-        
-        # while not future.done():
-        #     self.get_logger().info('Setting random starting pose....')
+            self.get_logger().error("/gazebo/set_entity_state service call failed: %s" % str(e))
 
         self.odom_x = object_state.pose.position.x
         self.odom_y = object_state.pose.position.y
@@ -337,21 +315,21 @@ class GazeboEnv(Node):
         self.publish_markers([0.0, 0.0])
 
         while not self.unpause.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Service /unpause_physics not available, waiting again...')
+            self.get_logger().info("Service /unpause_physics not available, waiting again...")
         try:
             self.unpause.call_async(Empty.Request())
         except Exception as e:
-            self.get_logger().error('/unpause_physics service call failed: %s' % str(e))
-        
+            self.get_logger().error("/unpause_physics service call failed: %s" % str(e))
+
         time.sleep(TIME_DELTA)
-        
+
         while not self.pause.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('Service /pause_physics not available, waiting again...')
+            self.get_logger().info("Service /pause_physics not available, waiting again...")
         try:
             self.pause.call_async(Empty.Request())
         except Exception as e:
-            self.get_logger().error('/pause_physics service call failed: %s' % str(e))
-        
+            self.get_logger().error("/pause_physics service call failed: %s" % str(e))
+
         v_state = []
         v_state[:] = self.velodyne_data[:]
         laser_state = [v_state]
@@ -389,51 +367,24 @@ class GazeboEnv(Node):
         return response
 
     def change_goal(self):
-        ''' 
-        Places a new goal and ensures its location is not on one of the obstacles.
-
-        Adjusts the goal search range, randomly places the goal within the specified range, 
-        and then checks if the goal position is valid (not on an obstacle).
-
-        Parameters
-        ----------
-        None
-
-        Returns
-        -------
-        None
-        '''
+        """Places a new goal and ensures its location is not on one of the obstacles"""
+        goal_ok = False
 
         if self.upper < 10:
             self.upper += 0.004
         if self.lower > -10:
             self.lower -= 0.004
 
-        goal_ok = False
-
         while not goal_ok:
             self.goal_x = self.odom_x + random.uniform(self.upper, self.lower)
             self.goal_y = self.odom_y + random.uniform(self.upper, self.lower)
-            goal_ok = self.check_goal_pos(self.goal_x, self.goal_y)
+            goal_ok = self.check_pos(self.goal_x, self.goal_y)
 
     def random_box(self):
-        ''' 
-        Randomly changes the location of the boxes in the environment on each reset to randomize the training environment.
-
-        This involves iterating over each box, setting a random position that is not too close to the robot or the goal, 
-        and ensuring the position is valid. The new positions are then updated in the simulation.
-
-        Parameters
-        ----------
-        None
-
-        Returns
-        -------
-        None
-        '''
+        """Randomly changes the location of the boxes in the environment on each reset to randomize the training environment"""
         for i in range(4):
             box_state = self.set_box_state
-            box_state.name = 'cardboard_box_' + str(i)
+            box_state.name = "cardboard_box_" + str(i)
 
             x = 0.0
             y = 0.0
@@ -441,7 +392,7 @@ class GazeboEnv(Node):
             while not box_ok:
                 x = np.random.uniform(-6, 6)
                 y = np.random.uniform(-6, 6)
-                box_ok = self.check_goal_pos(x, y)
+                box_ok = self.check_pos(x, y)
                 distance_to_robot = np.linalg.norm([x - self.odom_x, y - self.odom_y])
                 distance_to_goal = np.linalg.norm([x - self.goal_x, y - self.goal_y])
                 if distance_to_robot < 1.5 or distance_to_goal < 1.5:
@@ -457,34 +408,17 @@ class GazeboEnv(Node):
             self.set_static_obs_state_req._state = box_state
 
             while not self.set_model_state.wait_for_service(timeout_sec=1.0):
-                self.get_logger().info('Service /gazebo/set_entity_state not available, waiting again...')
+                self.get_logger().info("Service /gazebo/set_entity_state not available, waiting again...")
             try:
-                future = self.set_model_state.call_async(self.set_static_obs_state_req)
+                _ = self.set_model_state.call_async(self.set_static_obs_state_req)
             except Exception as e:
-                self.get_logger().error('/gazebo/set_entity_state service call failed: %s' % str(e))
-            
-            # while not future.done():
-            #     self.get_logger().info('Randomizing cardboard_box_%s...' % str(i))
+                self.get_logger().error("/gazebo/set_entity_state service call failed: %s" % str(e))
 
     def publish_markers(self, action):
-        ''' Publishes visual data for Rviz to represent the goal and the robot's actions.
-
-        This involves creating and publishing markers in Rviz to visualize the goal location and the robot's actions 
-        (linear and angular velocities) as colored shapes.
-
-        Parameters
-        ----------
-        action : list
-            A list containing the linear and angular velocities of the robot.
-
-        Returns
-        -------
-        None
-        '''
-
+        """Publishes visual data for Rviz to visualize the goal and the robot's actions"""
         markerArray = MarkerArray()
         marker = Marker()
-        marker.header.frame_id = 'odom'
+        marker.header.frame_id = "odom"
         marker.type = marker.CYLINDER
         marker.action = marker.ADD
         marker.scale.x = 0.1
@@ -498,14 +432,12 @@ class GazeboEnv(Node):
         marker.pose.position.x = self.goal_x
         marker.pose.position.y = self.goal_y
         marker.pose.position.z = 0.0
-
         markerArray.markers.append(marker)
-
         self.publisher.publish(markerArray)
 
         markerArray2 = MarkerArray()
         marker2 = Marker()
-        marker2.header.frame_id = 'odom'
+        marker2.header.frame_id = "odom"
         marker2.type = marker.CUBE
         marker2.action = marker.ADD
         marker2.scale.x = abs(action[0])
@@ -519,13 +451,12 @@ class GazeboEnv(Node):
         marker2.pose.position.x = 5.0
         marker2.pose.position.y = 0.0
         marker2.pose.position.z = 0.0
-
         markerArray2.markers.append(marker2)
         self.publisher2.publish(markerArray2)
 
         markerArray3 = MarkerArray()
         marker3 = Marker()
-        marker3.header.frame_id = 'odom'
+        marker3.header.frame_id = "odom"
         marker3.type = marker.CUBE
         marker3.action = marker.ADD
         marker3.scale.x = abs(action[1])
@@ -539,18 +470,12 @@ class GazeboEnv(Node):
         marker3.pose.position.x = 5.0
         marker3.pose.position.y = 0.2
         marker3.pose.position.z = 0.0
-
         markerArray3.markers.append(marker3)
         self.publisher3.publish(markerArray3)
 
     @staticmethod
     def observe_collision(laser_data):
-        ''' Detect a collision from laser data.
-
-        Parameters
-        ----------
-        laser_data : list
-            A list of laser readings.
+        """Detect a collision from laser data.
 
         Returns
         -------
@@ -562,56 +487,26 @@ class GazeboEnv(Node):
                 True if a collision is detected
             min_laser : float
                 The minimum laser reading.
-        '''
+        """
         min_laser = min(laser_data)
-        if min_laser < COLLISION_DIST:
+        if min_laser < COLLISION_THRESHOLD:
             return True, True, min_laser
         return False, False, min_laser
 
     @staticmethod
     def get_reward(target, collision, action, min_laser):
-        ''' Calculate the reward based on the current state and action taken.
-
-        Parameters
-        ----------
-        target : bool
-            True if the goal is reached.
-        collision : bool
-            True if a collision is detected.
-        action : list
-            A list containing the linear and angular velocities of the robot.
-        min_laser : float
-            The minimum laser reading.
-
-        Returns
-        -------
-        float
-            The calculated reward.
-        '''
+        """Calculate the reward based on the current state and action taken"""
         if target:
             return 100.0
-        elif collision:
+        if collision:
             return -100.0
-        else:
-            r3 = lambda x: 1 - x if x < 1 else 0.0
-            return action[0] / 2 - abs(action[1]) / 2 - r3(min_laser) / 2
+        obstacle_reward = (min_laser - 1)/2 if min_laser < 1.0 else 0.0
+        action_reward = action[0]/2 - abs(action[1])/2 - 0.001
+        return action_reward + obstacle_reward
 
     @staticmethod
-    def check_goal_pos(x, y):
-        ''' Check if the proposed random goal is located in an obstacle-free zone.
-
-        Parameters
-        ----------
-        x : float
-            x-coordinate of the goal position.
-        y : float
-            y-coordinate of the goal position.
-
-        Returns
-        -------
-        goal_ok : bool
-            True if the goal position is obstacle-free, False otherwise.
-        '''
+    def check_pos(x, y):
+        """Check if the proposed pos is located in unoccupied zone"""
         goal_ok = True
         if -3.8 > x > -6.2 and 6.2 > y > 3.8:
             goal_ok = False
@@ -639,18 +534,28 @@ class GazeboEnv(Node):
 
 
 def main(args=None):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--environment_dim", type=int, default=20)
+    parser.add_argument("--agent_dim", type=int, default=4)
+    parser.add_argument("--action_dim", type=int, default=2)
+    parser.add_argument("--max_action", type=float, default=1.0)
+    parser.add_argument("--actions_low", nargs=2, type=float, default=[-1, -1.0])
+    parser.add_argument("--actions_high", nargs=2, type=float, default=[1.0, 1.0])
+    arguments = parser.parse_args()
+
+    # Initialize the ROS2 communication
     rclpy.init(args=args)
-    env = GazeboEnv(environment_dim=20)
-    
+    # Create the environment node
+    env = Environment(arguments)
     # Use MultiThreadedExecutor to handle the two sensor callbacks in parallel.
     executor = MultiThreadedExecutor(num_threads=3)
     executor.add_node(env)
-    
     try:
         executor.spin()
     finally:
         env.destroy_node()
         rclpy.shutdown()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

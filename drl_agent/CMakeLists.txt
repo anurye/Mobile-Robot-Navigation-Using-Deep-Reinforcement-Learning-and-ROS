@@ -36,12 +36,17 @@ install(
 
 install(
   PROGRAMS
-    scripts/gazebo_env.py
-    scripts/point_cloud2.py
-    scripts/replay_buffer.py
-    scripts/train_td3_agent.py
-    scripts/test_td3_agent.py
-    scripts/td3_agent.py
+    scripts/policies/td3_agent.py
+    scripts/policies/train_td3_agent.py
+    scripts/policies/test_td3_agent.py
+    scripts/policies/td7_agent.py
+    scripts/policies/train_td7_agent.py
+    scripts/policies/test_td7_agent.py
+    scripts/utils/point_cloud2.py
+    scripts/utils/replay_buffer.py
+    scripts/utils/buffer.py
+    scripts/environment/environment.py
+    scripts/environment/environment_interface.py
   DESTINATION 
     lib/${PROJECT_NAME}
 )

@@ -26,6 +26,9 @@ endif()
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/Step.srv"
   "srv/Reset.srv"
+  "srv/GetDimensions.srv"
+  "srv/Seed.srv"
+  "srv/SampleActionSpace.srv"
 )
 
 

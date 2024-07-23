@@ -1,0 +1,5 @@
+# Empty request
+---
+int32 state_dim     # Dimension of the state space
+int32 action_dim    # Dimension of the action space
+float32 max_action  # Maximum action value

@@ -1,8 +1,8 @@
-float64[2] action       # Action to take, [v, w]
+float32[] action    # Action to take, [v, w]
 
 ---
-float64[24] state       # Next state as a result of the action taken
-float64 reward          # Reward feedback 
-bool done               # Flag to indicate if the episode is done
-bool target             # Flag to indicate if goal is reached
+float32[] state     # Next state as a result of the action taken
+float32 reward      # Reward feedback 
+bool done           # Flag to indicate if the episode is done
+bool target         # Flag to indicate if goal is reached
 
