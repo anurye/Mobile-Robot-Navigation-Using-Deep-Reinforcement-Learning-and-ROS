@@ -45,14 +45,14 @@ pip install -r requirements.txt
     ```bash
     cd ~/drl_agent_ws
     source install/setup.bash
-    ros2 launch drl_agent_description simulation.launch.py
+    ros2 launch drl_agent_bringup simulation.launch.py
     ```
 
     Terminal 2:
     ```bash
     cd ~/drl_agent_ws
     source install/setup.bash
-    ros2 run drl_agent environment.py 
+    ros2 run drl_agent_bringup environment.py 
     ```
 
     Terminal 3:
