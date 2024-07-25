@@ -17,19 +17,19 @@ ARGUMENTS = [
 
 
 def generate_launch_description():
-    drl_agent_pkg = get_package_share_directory('drl_agent')
+    drl_agent_bringup_pkg = get_package_share_directory('drl_agent_bringup')
     pkg_nav2_bringup = get_package_share_directory('nav2_bringup')
 
     localization_params_arg = DeclareLaunchArgument(
         'params',
         default_value=PathJoinSubstitution(
-            [drl_agent_pkg, 'config', 'localization.yaml']),
+            [drl_agent_bringup_pkg, 'config', 'localization.yaml']),
         description='Localization parameters')
 
     map_arg = DeclareLaunchArgument(
         'map',
         default_value=PathJoinSubstitution(
-            [drl_agent_pkg, 'maps', 'warehouse.yaml']), # TODO: add default map here
+            [drl_agent_bringup_pkg, 'maps', 'warehouse.yaml']), # TODO: add default map here
         description='Full path to map yaml file to load')
 
     namespace = LaunchConfiguration('namespace')

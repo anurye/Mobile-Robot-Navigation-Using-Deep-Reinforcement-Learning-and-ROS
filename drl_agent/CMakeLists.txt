@@ -8,8 +8,8 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclpy REQUIRED)
-find_package(gazebo_ros REQUIRED)
-find_package(drl_agent_description REQUIRED)
+find_package(drl_agent_bringup REQUIRED)
+find_package(drl_agent_interfaces REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
@@ -43,10 +43,8 @@ install(
     scripts/policies/td7_agent.py
     scripts/policies/train_td7_agent.py
     scripts/policies/test_td7_agent.py
-    scripts/utils/point_cloud2.py
     scripts/utils/replay_buffer.py
     scripts/utils/buffer.py
-    scripts/environment/environment.py
     scripts/environment/environment_interface.py
   DESTINATION 
     lib/${PROJECT_NAME}

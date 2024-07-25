@@ -22,7 +22,7 @@ ARGUMENTS = [
 
 
 def generate_launch_description():
-    drl_agent_pkg = get_package_share_directory('drl_agent')
+    drl_agent_bringup_pkg = get_package_share_directory('drl_agent_bringup')
 
     namespace = LaunchConfiguration('namespace')
     sync = LaunchConfiguration('sync')
@@ -30,7 +30,7 @@ def generate_launch_description():
     slam_params_arg = DeclareLaunchArgument(
         'params',
         default_value=PathJoinSubstitution(
-            [drl_agent_pkg, 'config', 'slam.yaml']),
+            [drl_agent_bringup_pkg, 'config', 'slam.yaml']),
         description='Robot namespace')
 
     slam_params = RewrittenYaml(
@@ -43,7 +43,7 @@ def generate_launch_description():
     remappings = [
         ('/tf', 'tf'),
         ('/tf_static', 'tf_static'),
-        ('/scan', 'scan'),
+        ('/scan', 'front_laser/scan'),
         ('/map', 'map'),
         ('/map_metadata', 'map_metadata'),
     ]

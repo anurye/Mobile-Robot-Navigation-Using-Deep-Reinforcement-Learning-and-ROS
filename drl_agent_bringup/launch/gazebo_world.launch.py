@@ -11,11 +11,11 @@ from ament_index_python.packages import get_package_prefix
 
 
 ARGUMENTS = [
-    DeclareLaunchArgument('use_gazebo_gui', default_value='false',
+    DeclareLaunchArgument('use_gazebo_gui', default_value='true',
                           choices=['true', 'false'],
-                          description='Set "false" to run gazebo headless.'),
+                          description='Whether or not to launch gzclient'),
     DeclareLaunchArgument('world_path',
-          default_value=[os.path.join(get_package_share_directory('drl_agent_description'), 'worlds', 'TD3.world'), ''],
+          default_value=[os.path.join(get_package_share_directory('drl_agent_bringup'), 'worlds', 'TD3.world')],
           description='SDF world file'),
 ]
 
@@ -23,8 +23,10 @@ ARGUMENTS = [
 def generate_launch_description():
 
     # Get packages description and directory
+    drl_agent_bringup_package_name = 'drl_agent_bringup'
     drl_agent_description_package_name = 'drl_agent_description'
     velodyne_description_package_name = 'velodyne_description'
+    drl_agent_bringup_package_directory = get_package_share_directory(drl_agent_bringup_package_name)
     drl_agent_description_package_directory = get_package_share_directory(drl_agent_description_package_name)
     velodyne_description_package_directory = get_package_share_directory(velodyne_description_package_name)
 
@@ -59,7 +61,7 @@ def generate_launch_description():
 
     # Gazebo server
     gazebo_params_yaml_file = os.path.join(
-        drl_agent_description_package_directory, 'config', 'gazebo_params.yaml')
+        drl_agent_bringup_package_directory, 'config', 'gazebo_params.yaml')
     gzserver = ExecuteProcess(
         cmd=['gzserver',
              '-s', 'libgazebo_ros_init.so',

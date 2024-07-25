@@ -4,6 +4,7 @@ from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
+from launch.conditions import IfCondition
 from launch.substitutions import Command, PathJoinSubstitution
 from launch.substitutions.launch_configuration import LaunchConfiguration
 
@@ -17,6 +18,8 @@ ARGUMENTS = [
                           description='use_sim_time'),
     DeclareLaunchArgument('namespace', default_value='',
                           description='Robot namespace'),
+    DeclareLaunchArgument('launch_joint_state_pub', default_value='false',
+                          description='Whether or not to launch joint-state-publisher'),
 ]
 
 
@@ -50,7 +53,8 @@ def generate_launch_description():
         remappings=[
             ('/tf', 'tf'),
             ('/tf_static', 'tf_static')
-        ]
+        ],
+        condition=IfCondition(LaunchConfiguration('launch_joint_state_pub'))
     )
 
     ld = LaunchDescription(ARGUMENTS)

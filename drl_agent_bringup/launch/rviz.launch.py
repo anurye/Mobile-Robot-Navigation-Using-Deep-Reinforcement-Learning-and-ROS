@@ -17,10 +17,10 @@ ARGUMENTS = [
 
 
 def generate_launch_description():
-    drl_agent_description_share = get_package_share_directory('drl_agent_description')
+    drl_agent_bringup_share = get_package_share_directory('drl_agent_bringup')
 
     rviz_config_file = PathJoinSubstitution(
-        [drl_agent_description_share, 'rviz', 'config.rviz'])
+        [drl_agent_bringup_share, 'config', 'config.rviz'])
 
     # rviz node
     rviz2 = Node(

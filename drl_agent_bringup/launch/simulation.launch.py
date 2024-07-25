@@ -14,11 +14,17 @@ ARGUMENTS = [
     DeclareLaunchArgument('use_sim_time', default_value='true',
                           choices=['true', 'false'],
                           description='use_sim_time'),
+    DeclareLaunchArgument('namespace', default_value='',
+                          description='Robot namespace'),
     DeclareLaunchArgument('rviz', default_value='true',
                           choices=['true', 'false'],
                           description='Start rviz.'),
-    DeclareLaunchArgument('namespace', default_value='',
-                          description='Robot namespace'),
+    DeclareLaunchArgument('use_gazebo_gui', default_value='true',
+                          choices=['true', 'false'],
+                          description='Start gzclient.'),
+    DeclareLaunchArgument('gym_env', default_value='true',
+                          choices=['true', 'false'],
+                          description='Start DRL environment'),
     DeclareLaunchArgument('localization', default_value='false',
                           choices=['true', 'false'],
                           description='Whether to launch localization'),
@@ -34,19 +40,21 @@ ARGUMENTS = [
 def generate_launch_description():
     # Get the agent_description share directory
     drl_agent_pkg = 'drl_agent'
+    drl_agent_bringup_pkg = 'drl_agent_bringup'
     drl_agent_description_pkg = 'drl_agent_description'
     drl_agent_pkg_share = get_package_share_directory(drl_agent_pkg)
+    drl_agent_bringup_share = get_package_share_directory(drl_agent_bringup_pkg)
     drl_agent_description_share = get_package_share_directory(drl_agent_description_pkg)
 
     # Paths
     agent_description_launch = PathJoinSubstitution(
         [drl_agent_description_share, 'launch', 'agent_description.launch.py'])
     agent_gazebo_world_launch = PathJoinSubstitution(
-        [drl_agent_description_share, 'launch', 'gazebo_world.launch.py'])
+        [drl_agent_bringup_share, 'launch', 'gazebo_world.launch.py'])
     agent_spawn_launch = PathJoinSubstitution(
-        [drl_agent_description_share, 'launch', 'spawn_agent.launch.py'])
+        [drl_agent_bringup_share, 'launch', 'spawn_agent.launch.py'])
     rviz_launch = PathJoinSubstitution(
-        [drl_agent_description_share, 'launch', 'rviz.launch.py'])
+        [drl_agent_bringup_share, 'launch', 'rviz.launch.py'])
     localization_launch = PathJoinSubstitution(
         [drl_agent_pkg_share, 'launch', 'localization.launch.py'])
     slam_launch = PathJoinSubstitution(
@@ -57,6 +65,8 @@ def generate_launch_description():
     # Launch configurations
     namespace = LaunchConfiguration('namespace')
     use_sim_time = LaunchConfiguration('use_sim_time')
+    use_gazebo_gui = LaunchConfiguration('use_gazebo_gui')
+    gym_env = LaunchConfiguration('gym_env') # TODO: launch gym_env from here
 
     # agent description
     agent_description = IncludeLaunchDescription(
@@ -69,7 +79,10 @@ def generate_launch_description():
 
     # Gazebo world
     agent_gazebo_world = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([agent_gazebo_world_launch])
+        PythonLaunchDescriptionSource([agent_gazebo_world_launch]),
+        launch_arguments=[
+            ('use_gazebo_gui', use_gazebo_gui),
+        ],
     )
 
     # Agent spawn
@@ -122,8 +135,8 @@ def generate_launch_description():
     ld.add_action(agent_gazebo_world)
     ld.add_action(agent_spawn)
     ld.add_action(rviz2)
-    ld.add_action(localization)
     ld.add_action(slam)
+    ld.add_action(localization)
     ld.add_action(nav2)
 
     return ld

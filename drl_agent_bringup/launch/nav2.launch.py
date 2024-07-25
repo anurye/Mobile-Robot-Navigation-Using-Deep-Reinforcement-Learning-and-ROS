@@ -19,7 +19,7 @@ ARGUMENTS = [
                           description='Use sim time'),
     DeclareLaunchArgument('params_file',
                           default_value=PathJoinSubstitution([
-                              get_package_share_directory('drl_agent'),
+                              get_package_share_directory('drl_agent_bringup'),
                               'config',
                               'nav2.yaml'
                               ]),

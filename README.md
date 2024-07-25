@@ -22,24 +22,22 @@ pip install -r requirements.txt
     cd ~/drl_agent_ws/src
     git clone git@github.com:anurye/DRL-for-Mobile-Robot-Navigation-Using-ROS2.git
     ```
-- Export the environment variable `DRL_AGENT_PACKAGE_PATH`:
-    ```bash
-    echo 'export DRL_AGENT_PACKAGE_PATH=~/drl_agent_ws/src/drl_agent' >> ~/.bashrc
-    source ~/.bashrc
-    ```
 - Install dependencies:
     ```bash
     cd ~/drl_agent_ws
     rosdep install --from-path src -yi --rosdistro humble
     ```
-
-If everything is set up correctly, you can proceed to the training step.
-
-## Training
 - Build the workspace:
     ```bash
     cd ~/drl_agent_ws
     colcon build
+    ```
+
+## Training
+- Export the environment variable `DRL_AGENT_PACKAGE_PATH`:
+    ```bash
+    echo 'export DRL_AGENT_PACKAGE_PATH=~/drl_agent_ws/src/drl_agent' >> ~/.bashrc
+    source ~/.bashrc
     ```
 - Launch the simulation:
 
