@@ -36,9 +36,11 @@ def generate_launch_description():
 
     robot_meshes_path = os.path.join(drl_agent_description_package_directory, 'meshes')
     velodyne_description_meshes_path = os.path.join(velodyne_description_package_directory, 'meshes')
-    pkg_models_path = os.path.join(drl_agent_description_package_directory, 'models') # add local models path
+    drl_agent_description_models_path = os.path.join(drl_agent_description_package_directory, 'models')
+    drl_agent_bringup_models_path = os.path.join(drl_agent_bringup_package_directory, 'models')
     
-    gazebo_resource_paths = [drl_agent_install_dir_path, robot_meshes_path, pkg_models_path, velodyne_description_install_dir_path, velodyne_description_meshes_path]
+    gazebo_resource_paths = [drl_agent_install_dir_path, robot_meshes_path, drl_agent_description_models_path,\
+                             drl_agent_bringup_models_path, velodyne_description_install_dir_path, velodyne_description_meshes_path]
     if 'GAZEBO_MODEL_PATH' in os.environ:
         for resource_path in gazebo_resource_paths:
             if resource_path not in os.environ['GAZEBO_MODEL_PATH']:

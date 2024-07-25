@@ -27,7 +27,7 @@ from drl_agent_interfaces.srv import Step, Reset, Seed, GetDimensions, SampleAct
 
 
 GOAL_THRESHOLD = 0.3
-COLLISION_THRESHOLD = 0.3
+COLLISION_THRESHOLD = 0.35
 TIME_DELTA = 0.1
 
 
