@@ -20,7 +20,7 @@ pip install -r requirements.txt
     ```bash
     mkdir -p ~/drl_agent_ws/src
     cd ~/drl_agent_ws/src
-    git clone git@github.com:anurye/DRL-for-Mobile-Robot-Navigation-Using-ROS2.git
+    git clone --recurse-submodules git@github.com:anurye/DRL-for-Mobile-Robot-Navigation-Using-ROS2.git .
     ```
 - Install dependencies:
     ```bash
