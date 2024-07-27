@@ -29,6 +29,7 @@ install(
     config
     launch
     scripts
+    models
     worlds
   DESTINATION
     share/${PROJECT_NAME}/
