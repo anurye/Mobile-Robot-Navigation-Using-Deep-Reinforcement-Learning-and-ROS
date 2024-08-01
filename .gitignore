@@ -54,4 +54,6 @@ CATKIN_IGNORE
 final_models/
 pytorch_models/
 results/
+trajectories/
+maps/
 .vscode/

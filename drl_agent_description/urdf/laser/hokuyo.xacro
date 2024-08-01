@@ -65,7 +65,7 @@
           -->
 
           <always_on>1</always_on>
-          <update_rate>100</update_rate>
+          <update_rate>20</update_rate>
           <visualize>1</visualize>
         </sensor>
     </gazebo>

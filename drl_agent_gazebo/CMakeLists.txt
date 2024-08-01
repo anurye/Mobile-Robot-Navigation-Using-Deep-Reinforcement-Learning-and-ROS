@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(drl_agent_interfaces)
+project(drl_agent_gazebo)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -7,9 +7,10 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(std_msgs REQUIRED)
-find_package(rosidl_default_generators REQUIRED)
+find_package(rclpy REQUIRED)
+find_package(gazebo_ros REQUIRED)
+find_package(drl_agent_description REQUIRED)
+find_package(drl_agent_interfaces REQUIRED)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -23,15 +24,14 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-rosidl_generate_interfaces(${PROJECT_NAME}
-  "srv/Step.srv"
-  "srv/Reset.srv"
-  "srv/GetDimensions.srv"
-  "srv/Seed.srv"
-  "srv/SampleActionSpace.srv"
-  "srv/GetTestEpisodes.srv"
-  "srv/GetStartGoalPairs.srv"
-  "action/StartDrlSession.action"
+install(
+  DIRECTORY
+    config
+    launch
+    models
+    worlds
+  DESTINATION
+    share/${PROJECT_NAME}/
 )
 
 ament_package()

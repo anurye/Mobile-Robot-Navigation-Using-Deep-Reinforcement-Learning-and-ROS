@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
 
+import numpy as np
 import rclpy
 from rclpy.node import Node
-import numpy as np
-from drl_agent_interfaces.srv import (
-    Step,
-    Reset,
-    Seed,
-    GetDimensions,
-    SampleActionSpace
-    )
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
+from drl_agent_interfaces.srv import (Step,
+                                      Reset,
+                                      Seed,
+                                      GetDimensions,
+                                      SampleActionSpace)
 
 
 class EnvInterface(Node):
-    def __init__(self):
-        super().__init__("env_interface_node")
+    def __init__(self, node_name):
+        super().__init__(node_name)
 
         # Create service clients
+        self.clients_callback_group = MutuallyExclusiveCallbackGroup()
         self.reset_client = self.create_client(Reset, "reset")
         self.step_client = self.create_client(Step, "step")
         self.seed_client = self.create_client(Seed, "seed")
@@ -86,7 +86,7 @@ class EnvInterface(Node):
             rclpy.spin_until_future_complete(self, future)
         except Exception as e:
             self.get_logger().error(f"Service call /seed failed: {e}")
-        self.get_logger().info(f"Environment seed set to: {seed}, Success: {future.result().success}\n")
+        self.get_logger().info(f"Environment seed set to: {seed}, Success: {future.result().success}")
 
 
 def main(args=None):

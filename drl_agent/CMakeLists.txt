@@ -8,7 +8,7 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclpy REQUIRED)
-find_package(drl_agent_bringup REQUIRED)
+find_package(drl_agent_gazebo REQUIRED)
 find_package(drl_agent_interfaces REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
@@ -45,7 +45,10 @@ install(
     scripts/policies/test_td7_agent.py
     scripts/utils/replay_buffer.py
     scripts/utils/buffer.py
+    scripts/utils/point_cloud2.py
+    scripts/utils/load_yaml.py
     scripts/environment/environment_interface.py
+    scripts/environment/environment.py
   DESTINATION 
     lib/${PROJECT_NAME}
 )

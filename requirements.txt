@@ -1,2 +1,3 @@
 squaternion==2023.9.2
 tensorboard==2.17.0
+matplotlib-scalebar==0.8.1

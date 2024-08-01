@@ -1,0 +1,5 @@
+string mode     # train or test
+---
+bool success
+---
+string progress
