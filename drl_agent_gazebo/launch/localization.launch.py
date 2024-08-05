@@ -29,7 +29,7 @@ def generate_launch_description():
     map_arg = DeclareLaunchArgument(
         'map',
         default_value=PathJoinSubstitution(
-            [drl_agent_gazebo_pkg, 'maps', 'warehouse.yaml']), # TODO: add default map here
+            [drl_agent_gazebo_pkg, 'maps', 'td7_world.yaml']),
         description='Full path to map yaml file to load')
 
     namespace = LaunchConfiguration('namespace')

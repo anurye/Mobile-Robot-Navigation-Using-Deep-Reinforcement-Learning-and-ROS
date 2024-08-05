@@ -45,8 +45,8 @@ def launch_setup(context, *args, **kwargs):
 
     nav2 = GroupAction([
         PushRosNamespace(namespace),
-        SetRemap(namespace_str + '/global_costmap/scan', namespace_str + '/scan'),
-        SetRemap(namespace_str + '/local_costmap/scan', namespace_str + '/scan'),
+        SetRemap(namespace_str + '/global_costmap/scan', namespace_str + 'scan'),
+        SetRemap(namespace_str + '/local_costmap/scan', namespace_str + 'scan'),
 
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(launch_nav2),

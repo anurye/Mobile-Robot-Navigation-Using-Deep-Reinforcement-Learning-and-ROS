@@ -87,13 +87,13 @@ def main():
         print(f"Environment variable: {drl_agent_src_env}, is not set")
         sys.exit(-1)
 
-    map_file_name = "td7_world"
+    map_file_name = "empty_world"
     trajectory_file_name = "traj_for_seed_0"
-    start_goal_pairs_file_name = "start_goal_pairs"
+    start_goal_pairs_file_name = "test_config"
 
     map_path = os.path.join(drl_agent_src_path, "drl_agent", "maps")
     trajectories_path = os.path.join(drl_agent_src_path, "drl_agent", "trajectories")
-    start_goal_pairs_path = os.path.join(drl_agent_src_path, "drl_agent_gazebo", "config")
+    start_goal_pairs_path = os.path.join(drl_agent_src_path, "drl_agent", "config")
 
     map_img_path = os.path.join(map_path, f"{map_file_name}.pgm")
     map_meta_data_path = os.path.join(map_path, f"{map_file_name}.yaml")

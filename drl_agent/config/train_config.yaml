@@ -1,0 +1,11 @@
+train_settings:
+  seed: 0
+  offline: false
+  use_checkpoints: true
+  load_model: false
+  timesteps_before_training: 25000
+  eval_freq: 5000
+  eval_eps: 10
+  max_timesteps: 5000000
+  max_episode_steps: 800
+  base_file_name: "td7_agent"

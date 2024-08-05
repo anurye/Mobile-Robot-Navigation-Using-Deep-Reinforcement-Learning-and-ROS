@@ -48,10 +48,10 @@ class Environment(Node):
 		# Determine if the environment is to be run in training or testing mode
 		self.declare_parameter("environment_mode", "train")
 		self.environment_mode = self.get_parameter("environment_mode").get_parameter_value().string_value.lower()
-		if not self.environment_mode in ["test", "train"]:
+		if not self.environment_mode in ["train", "test", "random_test"]:
 			raise NotImplementedError
 		# Environment run mode
-		self.train_mode = self.environment_mode == "train"
+		self.train_mode = self.environment_mode == "train" or self.environment_mode == "random_test"
 		self.get_logger().info(f"Environment run mode: {self.environment_mode}")
 
 		# Load environment config file
@@ -349,6 +349,7 @@ class Environment(Node):
 		except Exception as e:
 			self.get_logger().error("/reset_world service call failed: %s" % str(e))
 			sys.exit(-1)
+		time.sleep(self.time_delta)
 
 		"""*****************************************************
 		** Determine start positions for the agent

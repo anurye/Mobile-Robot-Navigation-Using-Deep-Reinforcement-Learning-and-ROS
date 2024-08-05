@@ -24,7 +24,7 @@
   <xacro:camD name="cameraD" parent="chassis" xyz="0.025 0 0.32" rpy="0 0 0" />
   <!-- Velodyne -->
   <xacro:include filename="$(find velodyne_description)/urdf/VLP-16.urdf.xacro"/>
-  <xacro:VLP-16 parent="base_link" name="velodyne" topic="/velodyne_points" hz="10" samples="360" gpu="false" min_angle="-1.57" max_angle="1.57" min_range="0.1">
+  <xacro:VLP-16 parent="base_link" name="velodyne" topic="/velodyne_points" hz="10" samples="360" gpu="true" min_angle="-1.57" max_angle="1.57" min_range="0.1">
     <origin xyz="0.125 0 0.25" rpy="0 0 0" />
   </xacro:VLP-16>
 

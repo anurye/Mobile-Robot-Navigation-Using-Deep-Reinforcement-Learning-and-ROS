@@ -1,17 +1,17 @@
-test_setting:
+test_settings:
   seed: 0
   base_file_name: "td7_agent"
   save_date: 20240720
   max_episode_steps: 800
   use_checkpoints: True
-  num_of_test_episodes: 4
+  num_of_test_episodes: 4 # Should match with the start-goal pairs below
 
 start_goal_pairs:
 - start: {x: -8.0, y: -8.0, theta: 0}
   goal: {x: 8.0, y: 8.0}
-- start: {x: 8.0, y: -8.0, theta: 0}
-  goal: {x: 3.0, y: -3.0}
-- start: {x: -6.0, y: -8.0, theta: 0}
-  goal: {x: 5.0, y: 5.0}
-- start: {x: -4.0, y: 5.0, theta: 0}
-  goal: {x: -4.0, y: -5.0}
+- start: {x: -8.0, y: 8.0, theta: 0}
+  goal: {x: 8.0, y: -8.0}
+- start: {x: -8.0, y: 3.0, theta: 0}
+  goal: {x: 8.0, y: -3.0}
+- start: {x: -3.0, y: -8.0, theta: 0}
+  goal: {x: 3.0, y: 8.0}

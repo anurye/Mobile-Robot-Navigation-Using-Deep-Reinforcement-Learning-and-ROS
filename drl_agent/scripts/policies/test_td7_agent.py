@@ -23,6 +23,18 @@ class TestTD7(EnvInterface):
 		super().__init__("test_td7_agent")
 
 		"""************************************************
+		** Test mode
+		************************************************"""
+		# Determine if the test is to be run in a random or determnistic way
+		self.declare_parameter("test_mode", "random_test")
+		self.test_mode = self.get_parameter("test_mode").get_parameter_value().string_value.lower()
+		if not self.test_mode in ["test", "random_test"]:
+			raise NotImplementedError
+		# Test run mode
+		self.random_train_mode = self.test_mode == "random_test"
+		self.get_logger().info(f"Test run mode: {self.test_mode}")
+
+		"""************************************************
 		** Test config
 		************************************************"""
 		# Base directory for loading models and for saving trajectories
@@ -36,16 +48,18 @@ class TestTD7(EnvInterface):
 		# Model will be loaded from
 		self.pytorch_models_dir = os.path.join(drl_agent_src_path, "drl_agent", "pytorch_models")
 		# Trajectories will be save in
-		self.trajectories_dir = os.path.join(drl_agent_src_path, "drl_agent", "trajectories")
-		os.makedirs(self.trajectories_dir, exist_ok=True)
+		self.test_metric_dir = os.path.join(drl_agent_src_path, "drl_agent", "test_metric")
+		os.makedirs(self.test_metric_dir, exist_ok=True)
+
 		# Load test config file
-		self.test_config = self.load_yaml_file(test_config_file_path)["test_setting"]
+		self.test_config = self.load_yaml_file(test_config_file_path)["test_settings"]
 		self.seed = self.test_config["seed"]
 		save_date = self.test_config["save_date"]
 		base_file_name = self.test_config["base_file_name"]
 		self.file_name = f"{base_file_name}_seed_{self.seed}_date_{save_date}"
 		self.use_checkpoints = self.test_config["use_checkpoints"]
 		self.max_episode_steps = self.test_config["max_episode_steps"]
+
 		# Set seed
 		torch.manual_seed(self.seed)
 		np.random.seed(self.seed)
@@ -68,16 +82,14 @@ class TestTD7(EnvInterface):
 		self.odom = self.create_subscription(Odometry, "odom", self.odom_callback, 
 									   qos_profile, callback_group=self.odom_callback_group)
 		self.odom
-		# Initialize lists for storing current and all trajectories as well as last odom
 		self.last_odom = None
-		self.all_trajectories = []
-		self.current_trajectory = []
 
 		# Initialize metrics
-		self.total_distance_traveled = 0
-		self.total_goal_distance = 0
-		self.total_time = 0
-		self.num_episodes = 0
+		self.all_episode_times = []
+		self.all_episode_distances = []
+		self.all_trajectories = []
+		self.target_reached_counter = 0.0
+		self.num_episodes_counter = 0.0
 
 		self.test()
 
@@ -85,10 +97,10 @@ class TestTD7(EnvInterface):
 		"""Loads test configuration file"""
 		try:
 			with open(config_file_path, 'r') as file:
-				config = yaml.safe_load(file)
+				yaml_file = yaml.safe_load(file)
 		except Exception as e:
 			self.get_logger().info(f"Unable to load: {config_file_path}: {e}")
-		return config
+		return yaml_file
 
 	def odom_callback(self, od_data):
 		"""Updates the latest odometry data"""
@@ -96,10 +108,13 @@ class TestTD7(EnvInterface):
 
 	def test(self):
 		"""Run continious testing loop"""
+		# Initialization
 		done = False
+		current_trajectory = []
 		episode_timesteps = 0
 		state = self.reset()
-		# episode_start_time = time.time()
+
+		episode_start_time = time.time()
 		while True:
 			action = self.rl_agent.select_action(np.array(state), self.use_checkpoints, use_exploration=False)
 			next_state, reward, done, target = self.step(action)
@@ -109,31 +124,27 @@ class TestTD7(EnvInterface):
 			if not self.last_odom is None:
 				x = self.last_odom.pose.pose.position.x
 				y = self.last_odom.pose.pose.position.y
-				self.current_trajectory.append({'x': x, 'y': y})
+				current_trajectory.append({'x': x, 'y': y})
 			
 			# On termination of episode
 			if done:
 				# Save recorded trajectory and reset current trajectory
-				self.all_trajectories.append(self.current_trajectory)
-				self.save_trajectories()
-
+				self.all_trajectories.append(current_trajectory)
+				self.num_episodes_counter += 1
 				# Calculate metrics
-				# episode_distance_traveled = self.calculate_distance(self.current_trajectory)
-				# self.total_distance_traveled += episode_distance_traveled
-				# goal_distance = np.sqrt(self.current_trajectory[0]['x']**2 + self.current_trajectory[0]['y']**2)
-				# self.total_goal_distance += goal_distance
-				# episode_time = time.time() - episode_start_time
-				# self.total_time += episode_time
-				# self.num_episodes += 1
+				if target:
+					self.all_episode_distances.append(self.calculate_distance(current_trajectory))
+					self.all_episode_times.append(time.time() - episode_start_time)
+					self.target_reached_counter += 1
+				# Save metrics
+				self.save_test_metrics()
+
 				# Reset
-				self.current_trajectory = []
-				try:
-					state = self.reset()
-				except Exception:
-					pass
+				state = self.reset()
 				done = False
 				episode_timesteps = 0
-				# episode_start_time = time.time()
+				current_trajectory = []
+				episode_start_time = time.time()
 			else:
 				state = next_state
 				episode_timesteps += 1
@@ -142,16 +153,39 @@ class TestTD7(EnvInterface):
 		"""Calculates the total distance traveled in a trajectory"""
 		distance = 0.0
 		for i in range(1, len(traj)):
-			x1, y1 = traj[i-1]['x'], traj[i-1]['y']
-			x2, y2 = traj[i]['x'], traj[i]['y']
+			x1, y1 = traj[i-1]["x"], traj[i-1]["y"]
+			x2, y2 = traj[i]["x"], traj[i]["y"]
 			distance += np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
 		return distance
 	
-	def save_trajectories(self):
-		filename = os.path.join(self.trajectories_dir, f"traj_for_seed_{self.seed}.json")
-		with open(filename, 'w') as file:
+	def save_test_metrics(self):
+		# Specify file names
+		traj_filename = os.path.join(self.test_metric_dir, f"traj_for_seed_{self.seed}.json")
+		metrics_filename = os.path.join(self.test_metric_dir, f"metrics_for_seed_{self.seed}.yaml")
+
+		# Perform test_metrics computation
+		average_time = round(float(np.mean(self.all_episode_times)), 4)
+		average_distance = round(float(np.mean(self.all_episode_distances)), 4)
+		success_rate = round(self.target_reached_counter / self.num_episodes_counter, 4)
+		collision_rate = 1 - success_rate
+
+		data = {
+			"test_metrics": {
+				"average_time": average_time,
+				"average_distance": average_distance,
+				"success_rate": success_rate,
+				"collision_rate": collision_rate
+			}
+		}
+		
+		# Save trajectory
+		with open(traj_filename, "w") as file:
 			json.dump(self.all_trajectories, file, indent=4)
-		self.get_logger().info(f'Saved trajectory data to {filename}')
+		self.get_logger().info(f"Saved trajectory data to: {traj_filename}")
+		# Save metrics
+		with open(metrics_filename, "w") as file:
+			yaml.dump(data, file, default_flow_style=False)
+		self.get_logger().info(f"Saved metrics data to: {metrics_filename}")
 
 
 
