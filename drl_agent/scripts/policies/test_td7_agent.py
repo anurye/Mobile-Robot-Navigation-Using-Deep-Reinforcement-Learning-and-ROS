@@ -9,10 +9,10 @@ import torch
 import numpy as np
 
 import rclpy
-from rclpy.node import Node
+from rclpy.executors import MultiThreadedExecutor
 from rclpy.qos import QoSProfile, ReliabilityPolicy
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
-from rclpy.executors import MultiThreadedExecutor
+
 from nav_msgs.msg import Odometry
 from td7_agent import Agent
 from environment_interface import EnvInterface

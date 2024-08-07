@@ -313,19 +313,19 @@
             <pose>-6.0 5.0 0.0 0 0 0</pose>
           </waypoint>
           <waypoint>
-            <time>18.0</time>
+            <time>23.0</time>
             <pose>6 5.0 0.0 0 0 0</pose>
           </waypoint>
           <waypoint>
-            <time>20.0</time>
+            <time>25.0</time>
             <pose>6 5 0.0 0 0 3.141592654</pose>
           </waypoint>
           <waypoint>
-            <time>38.0</time>
+            <time>48.0</time>
             <pose>-6.0 5.0 0.0 0 0 3.141592654</pose>
           </waypoint>
           <waypoint>
-            <time>40.0</time>
+            <time>50.0</time>
             <pose>-6.0 5.0 0.0 0 0 0</pose>
           </waypoint>
         </trajectory>
@@ -350,19 +350,19 @@
             <pose>6.0 -5.0 0.0 0 0 3.141592654</pose>
           </waypoint>
           <waypoint>
-            <time>18.0</time>
+            <time>23.0</time>
             <pose>-6 -5.0 0.0 0 0 3.141592654</pose>
           </waypoint>
           <waypoint>
-            <time>20.0</time>
+            <time>25.0</time>
             <pose>-6 -5 0.0 0 0 0</pose>
           </waypoint>
           <waypoint>
-            <time>38.0</time>
+            <time>48.0</time>
             <pose>5.0 -6.0 0.0 0 0 0</pose>
           </waypoint>
           <waypoint>
-            <time>40.0</time>
+            <time>50.0</time>
             <pose>6.0 -5.0 0.0 0 0 3.141592654</pose>
           </waypoint>
         </trajectory>
@@ -387,19 +387,19 @@
             <pose>5.0 6.0 0.0 0 0 -1.570796327</pose>
           </waypoint>
           <waypoint>
-            <time>18.0</time>
+            <time>23.0</time>
             <pose>5 -6.0 0.0 0 0 -1.570796327</pose>
           </waypoint>
           <waypoint>
-            <time>20.0</time>
+            <time>25.0</time>
             <pose>5 -6 0.0 0 0 1.570796327</pose>
           </waypoint>
           <waypoint>
-            <time>38.0</time>
+            <time>48.0</time>
             <pose>5.0 6.0 0.0 0 0 1.570796327</pose>
           </waypoint>
           <waypoint>
-            <time>40.0</time>
+            <time>50.0</time>
             <pose>5.0 6.0 0.0 0 0 -1.570796327</pose>
           </waypoint>
         </trajectory>
@@ -424,19 +424,19 @@
             <pose>-5.0 -6.0 0.0 0 0 1.570796327</pose>
           </waypoint>
           <waypoint>
-            <time>18.0</time>
+            <time>23.0</time>
             <pose>-5 6.0 0.0 0 0 1.570796327</pose>
           </waypoint>
           <waypoint>
-            <time>20.0</time>
+            <time>25.0</time>
             <pose>-5 6 0.0 0 0 -1.570796327</pose>
           </waypoint>
           <waypoint>
-            <time>38.0</time>
+            <time>48.0</time>
             <pose>-5.0 -6.0 0.0 0 0 -1.570796327</pose>
           </waypoint>
           <waypoint>
-            <time>40.0</time>
+            <time>50.0</time>
             <pose>-5.0 -6.0 0.0 0 0 1.570796327</pose>
           </waypoint>
         </trajectory>

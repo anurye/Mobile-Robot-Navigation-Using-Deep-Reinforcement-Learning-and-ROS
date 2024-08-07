@@ -47,6 +47,7 @@ install(
     scripts/utils/buffer.py
     scripts/utils/point_cloud2.py
     scripts/utils/load_yaml.py
+    scripts/utils/path_helper.py
     scripts/environment/environment_interface.py
     scripts/environment/environment.py
   DESTINATION 

@@ -16,7 +16,7 @@ ARGUMENTS = [
                           choices=['true', 'false'],
                           description='Whether or not to launch gzclient'),
     DeclareLaunchArgument('world_path',
-          default_value=[os.path.join(get_package_share_directory('drl_agent_gazebo'), 'worlds', 'td7_static.world')],
+          default_value=[os.path.join(get_package_share_directory('drl_agent_gazebo'), 'worlds', 'td7_dynamic.world')],
           description='SDF world file'),
 ]
 
