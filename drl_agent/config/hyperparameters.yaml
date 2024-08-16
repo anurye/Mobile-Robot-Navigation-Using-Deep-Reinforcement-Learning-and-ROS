@@ -1,0 +1,42 @@
+hyperparameters:
+  # Generic
+  batch_size: 256
+  buffer_size: 1000000
+  discount: 0.99999
+  target_update_rate: 250
+  exploration_noise: 1.0
+  exploration_noise_min: 0.1
+  exploration_noise_decay_steps: 500000
+  
+  # TD3
+  target_policy_noise: 0.2
+  noise_clip: 0.5
+  policy_freq: 2
+  
+  # LAP
+  alpha: 0.4
+  min_priority: 1
+  
+  # TD3+BC
+  lmbda: 0.1
+  
+  # Checkpointing
+  max_eps_when_checkpointing: 20
+  steps_before_checkpointing: 750000
+  reset_weight: 0.9
+  
+  # Encoder Model
+  zs_dim: 512
+  enc_hdim: 512
+  enc_activ: "elu"
+  encoder_lr: 0.0003
+  
+  # Critic Model
+  critic_hdim: 512
+  critic_activ: "elu"
+  critic_lr: 0.0003
+  
+  # Actor Model
+  actor_hdim: 512
+  actor_activ: "relu"
+  actor_lr: 0.0003

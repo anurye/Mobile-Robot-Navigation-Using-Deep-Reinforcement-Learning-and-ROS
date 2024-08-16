@@ -5,12 +5,10 @@ import os
 import sys
 import math
 import threading
-import yaml
 import random
 import time
 import numpy as np
 from collections import deque
-import point_cloud2 as pc2
 from squaternion import Quaternion
 
 import rclpy
@@ -29,6 +27,9 @@ from std_srvs.srv import Empty
 from gazebo_msgs.srv import SetEntityState
 from drl_agent_interfaces.srv import (Step, Reset, Seed, 
 									  GetDimensions, SampleActionSpace)
+
+import point_cloud2 as pc2
+from file_manager import load_yaml
 
 
 
@@ -66,7 +67,11 @@ class Environment(Node):
 		start_goal_pairs_file_path = os.path.join(drl_agent_src_path, "drl_agent",
 											"config", start_goal_pairs_file)
 		# Define the dimensions of the state, action, and maximum action value
-		self.config = self.load_yaml_file(env_config_file_path)
+		try:
+			self.config = load_yaml(env_config_file_path)
+		except Exception as e:
+			self.get_logger().info(f"Unable to load config file: {e}")
+			sys.exit(-1)
 		self.environment_config = self.config["environment"]
 		self.lower = self.environment_config["lower"]
 		self.upper = self.environment_config["upper"]
@@ -148,7 +153,11 @@ class Environment(Node):
 
 		# Load start-goal-pairs
 		if not self.train_mode:
-			self.start_goal_pairs = deque(self.load_yaml_file(start_goal_pairs_file_path)["start_goal_pairs"])
+			try:
+				self.start_goal_pairs = deque(load_yaml(start_goal_pairs_file_path)["start_goal_pairs"])
+			except Exception as e:
+				self.get_logger().error(f"Unable to load start-goal pairs: {e}")
+				sys.exit(-1)
 			self.current_pairs = None
 
 		# Define initial goal pos
@@ -160,6 +169,25 @@ class Environment(Node):
 		"""Destroy the node and shut down rclpy when done"""
 		self.get_logger().info("gym_node shutting down...")
 		self.destroy_node()
+
+	def seed_callback(self, request, response):
+		"""Sets environment seed for reproducibility of the training process."""
+		np.random.seed(request.seed)
+		response.success = True
+		return response
+	
+	def sample_action_callback(self, _, response):
+		"""Samples an action from the action space."""
+		action = np.random.uniform(self.actions_low, self.actions_high)
+		response.action = np.array(action, dtype=np.float32).tolist()
+		return response
+
+	def get_dimensions_callback(self, _, response):
+		"""Returns the dimensions of the state, action, and maximum action value"""
+		response.state_dim = self.environment_dim + self.agent_dim
+		response.action_dim = self.action_dim
+		response.max_action = self.max_action
+		return response
 
 	def update_environment_state(self, velodyne_data):
 		"""Updates environment state using pointcloud data from velodyne sensor
@@ -232,25 +260,6 @@ class Environment(Node):
 		"""Return a copy of the agent state"""
 		with self.agent_state_lock:
 			return self.agent_state.copy()
-
-	def seed_callback(self, request, response):
-		"""Sets environment seed for reproducibility of the training process."""
-		np.random.seed(request.seed)
-		response.success = True
-		return response
-
-	def sample_action_callback(self, _, response):
-		"""Samples an action from the action space."""
-		action = np.random.uniform(self.actions_low, self.actions_high)
-		response.action = np.array(action, dtype=np.float32).tolist()
-		return response
-
-	def get_dimensions_callback(self, _, response):
-		"""Returns the dimensions of the state, action, and maximum action value"""
-		response.state_dim = self.environment_dim + self.agent_dim
-		response.action_dim = self.action_dim
-		response.max_action = self.max_action
-		return response
 	
 	def set_gazebo_model_state(self, model_state):
 		"""Chage the position of gazebo model"""
@@ -262,7 +271,7 @@ class Environment(Node):
 			self.get_logger().error("/gazebo/set_entity_state service call failed: %s" % str(e))
 			sys.exit(-1)
 	
-	def propagate_state(self):
+	def propagate_state(self, time_delta):
 		"""Propagate the state of the environment for time_delata secons"""
 		while not self.unpause.wait_for_service(timeout_sec=1.0):
 			self.get_logger().info("Service /unpause_physics not available, waiting again...")
@@ -272,7 +281,7 @@ class Environment(Node):
 			self.get_logger().error("/unpause_physics service call failed: %s" % str(e))
 			sys.exit(-1)
 		# propagate state for time_delta seconds
-		time.sleep(self.time_delta)
+		time.sleep(time_delta)
 		while not self.pause.wait_for_service(timeout_sec=1.0):
 			self.get_logger().info("Service /pause_physics not available, waiting again...")
 		try:
@@ -280,23 +289,9 @@ class Environment(Node):
 		except Exception as e:
 			self.get_logger().error("/pause_physics service call failed: %s" % str(e))
 			sys.exit(-1)
-	
-	def load_yaml_file(self, yaml_file_path):
-		"""Loads environment configuration file"""
-		try:
-			with open(yaml_file_path, 'r') as file:
-				config = yaml.safe_load(file)
-		except Exception as e:
-			self.get_logger().info(f"Unable to load: {yaml_file_path}: {e}")
-		return config
 
 	def step_callback(self, request, response):
-		"""Executes a step in the environment, updating the robot's state and reading the new state.
-
-		This involves publishing the robot action, unpausing the simulation, propagating the state for a set time interval,
-		pausing the simulation, reading laser data to detect collisions, calculating the robot heading and distance to the goal,
-		and checking if the goal is reached and calculating the reward.
-		"""
+		"""Executes a step in the environment, updating the robot's state and returning the new state"""
 		target = False
 		action = request.action
 		# Send velocity command
@@ -306,7 +301,7 @@ class Environment(Node):
 		self.publish_markers(action)
 
 		# Propagate the state for time_delta secs
-		self.propagate_state()
+		self.propagate_state(self.time_delta)
 
 		# Compute state
 		environment_state = self.get_environment_state()
@@ -335,13 +330,6 @@ class Environment(Node):
 		"""*****************************************************
 		** Start by reseting the world
 		*****************************************************"""
-		while not self.pause.wait_for_service(timeout_sec=1.0):
-			self.get_logger().info("Service /pause_physics not available, waiting again...")
-		try:
-			self.pause.call_async(Empty.Request())
-		except Exception as e:
-			self.get_logger().error("/pause_physics service call failed: %s" % str(e))
-			sys.exit(-1)
 		while not self.reset_proxy.wait_for_service(timeout_sec=1.0):
 			self.get_logger().info("Service /reset_world not available, waiting again...")
 		try:
@@ -349,7 +337,6 @@ class Environment(Node):
 		except Exception as e:
 			self.get_logger().error("/reset_world service call failed: %s" % str(e))
 			sys.exit(-1)
-		time.sleep(self.time_delta)
 
 		"""*****************************************************
 		** Determine start positions for the agent
@@ -390,8 +377,8 @@ class Environment(Node):
 		self.shuffle_obstacles(start_x, start_y)
 		# Publish markers for rviz
 		self.publish_markers([0.0, 0.0])
-		# Propagate state for time_delta seconds
-		self.propagate_state()
+		# Propagate state for 2*time_delta seconds
+		self.propagate_state(2*self.time_delta)
 
 		"""*****************************************************
 		** Compute state after reset
@@ -405,10 +392,6 @@ class Environment(Node):
 		"""Places a new goal and ensures its location is not on one of the obstacles"""
 		if self.train_mode:
 			goal_ok = False
-			if self.upper < 2*self.upper:
-				self.upper += 0.004
-			if self.lower > -2*self.lower:
-				self.lower -= 0.004
 			while not goal_ok:
 				self.goal_x = start_x + random.uniform(self.upper, self.lower)
 				self.goal_y = start_y + random.uniform(self.upper, self.lower)
@@ -426,7 +409,7 @@ class Environment(Node):
 		return done, collision, min_laser
 
 	def shuffle_obstacles(self, start_x, start_y):
-		"""Randomly changes the location of the boxes upon reset"""
+		"""Randomly changes the location of the obstacles upon reset"""
 		prev_obstacle_positions = []
 		for i in range(1, self.num_of_obstacles + 1):
 			position_ok = False
@@ -437,7 +420,7 @@ class Environment(Node):
 
 				position_ok = not self.check_dead_zone(x, y)
 				distance_to_robot = np.linalg.norm([x - start_x, y - start_y])
-				distance_to_goal = np.linalg.norm([x - start_x, y - start_y])
+				distance_to_goal = np.linalg.norm([x - self.goal_x, y - self.goal_y])
 				if (distance_to_robot < self.inter_entity_distance or 
 					distance_to_goal < self.inter_entity_distance):
 					position_ok = False
@@ -463,16 +446,24 @@ class Environment(Node):
 	def check_dead_zone(self, x, y):
 		"""Check if (x, y) is in occupied space"""
 		dead_zone = False
-		if np.abs(x) > self.upper or np.abs(y) > self.upper:
-			dead_zone = True
-		elif 1.5 < np.abs(x) < 4.5 and 3.5 < np.abs(y) < 4.5:
-			dead_zone = True
-		elif 3.5 < np.abs(x) < 4.5 and 1.5 < np.abs(y) < 4.5:
-			dead_zone = True
-		elif 5.5 < np.abs(x) < self.upper and 0 < np.abs(y) < self.upper:
-			dead_zone = True
-		elif 0 < np.abs(x) < 0.5 and 5.5 < np.abs(y) < 9:
-			dead_zone = True
+		if self.train_mode:
+			if np.abs(x) > self.upper or np.abs(y) > self.upper:
+				dead_zone = True
+			elif 2.0 < np.abs(x) < self.upper and np.abs(y) < 1.0:
+				dead_zone = True
+			elif np.abs(x) < 1.0 and 2.0 < np.abs(y) < self.upper:
+				dead_zone = True
+		else:
+			if np.abs(x) > self.upper or np.abs(y) > self.upper:
+				dead_zone = True
+			elif 1.0 < np.abs(x) < 5.0 and 3.0 < np.abs(y) < 5.0:
+				dead_zone = True
+			elif 3.0 < np.abs(x) < 5.0 and 1.0 < np.abs(y) < 5.0:
+				dead_zone = True
+			elif 5.0 < np.abs(x) < self.upper and 0 < np.abs(y) < 1.0:
+				dead_zone = True
+			elif 0 < np.abs(x) < 1.0 and 5.0 < np.abs(y) < self.upper:
+				dead_zone = True
 		return dead_zone
 
 	def publish_markers(self, action):
@@ -561,7 +552,9 @@ def main(args=None):
 	try:
 		executor.spin()
 	except KeyboardInterrupt:
-		environment.get_logger().info("KeyboardInterrupt: gym_node, shutdown...")
+		pass
+	finally:
+		environment.get_logger().info("gym_node, shutting down...")
 		environment.destroy_node()
 		rclpy.shutdown()
 

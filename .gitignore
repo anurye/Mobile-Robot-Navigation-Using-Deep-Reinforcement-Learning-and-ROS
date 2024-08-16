@@ -50,10 +50,8 @@ qtcreator-*
 # Catkin custom files
 CATKIN_IGNORE
 
-# Ignore saved models
-final_models/
-pytorch_models/
-results/
-test_metric/
+# Ignore temp files
+temp/
+test_runs/
 maps/
 .vscode/

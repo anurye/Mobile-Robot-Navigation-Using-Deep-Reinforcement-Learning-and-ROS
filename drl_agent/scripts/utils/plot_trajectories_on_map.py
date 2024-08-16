@@ -1,10 +1,10 @@
 import os
 import sys
 import json
-import yaml
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 from matplotlib_scalebar.scalebar import ScaleBar
+from file_manager import load_yaml
 
 
 def transform_coordinates(coords, origin, resolution, map_height):
@@ -18,17 +18,6 @@ def transform_coordinates(coords, origin, resolution, map_height):
             [map_height - (y - origin[1]) / resolution for _, y in coords]
         )
     raise TypeError("Input should be a tuple or a list of tuples")
-
-
-def load_yaml(yaml_file_path):
-    """Load a YAML file."""
-    try:
-        with open(yaml_file_path, 'r') as file:
-            return yaml.safe_load(file)
-    except Exception as e:
-        print(f"Unable to load: {yaml_file_path}: {e}")
-        sys.exit(-1)
-
 
 def plot_traj_on_map(map_img_path, map_meta_data_path, trajectories_file_path, start_goal_pairs_file_path):
     """Plots trajectories on a given map"""
@@ -50,8 +39,12 @@ def plot_traj_on_map(map_img_path, map_meta_data_path, trajectories_file_path, s
         print(f"Unable to read: {trajectories_file_path}: {e}")
         sys.exit(-1)
 
-    map_metadata = load_yaml(map_meta_data_path)
-    start_goal_pairs = load_yaml(start_goal_pairs_file_path)["start_goal_pairs"]
+    try:
+        map_metadata = load_yaml(map_meta_data_path)
+        start_goal_pairs = load_yaml(start_goal_pairs_file_path)["start_goal_pairs"]
+    except Exception as e:
+        print(f"Unable to load data: {e}")
+        sys.exit(-1)
     resolution, origin = map_metadata["resolution"], map_metadata["origin"]
     map_height = map_img.shape[0]
 

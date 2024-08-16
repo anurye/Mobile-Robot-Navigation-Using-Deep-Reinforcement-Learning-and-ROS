@@ -101,51 +101,51 @@ class Critic(nn.Module):
 
 
 class Agent(object):
-	def __init__(self, state_dim, action_dim, max_action, hyperparameters, log_dir=None):
+	def __init__(self, state_dim, action_dim, max_action, hp, log_dir=None):
 		# Hyperparameters
-		hyperparameters = self.prep_hyperparameters(hyperparameters)
+		self.hyperparameters = self.prep_hyperparameters(hp)
 
 		# Generic
-		self.discount = hyperparameters["discount"]
-		self.batch_size = hyperparameters["batch_size"]
-		self.buffer_size = hyperparameters["buffer_size"]
-		self.target_update_rate = hyperparameters["target_update_rate"]
-		self.exploration_noise = hyperparameters["exploration_noise"]
-		self.exploration_noise_min = hyperparameters["exploration_noise_min"]
-		self.exploration_noise_decay_steps = hyperparameters["exploration_noise_decay_steps"]
+		self.discount = self.hyperparameters["discount"]
+		self.batch_size = self.hyperparameters["batch_size"]
+		self.buffer_size = self.hyperparameters["buffer_size"]
+		self.target_update_rate = self.hyperparameters["target_update_rate"]
+		self.exploration_noise = self.hyperparameters["exploration_noise"]
+		self.exploration_noise_min = self.hyperparameters["exploration_noise_min"]
+		self.exploration_noise_decay_steps = self.hyperparameters["exploration_noise_decay_steps"]
 
 		# TD3
-		self.noise_clip = hyperparameters["noise_clip"]
-		self.policy_freq = hyperparameters["policy_freq"]
-		self.target_policy_noise = hyperparameters["target_policy_noise"]
+		self.noise_clip = self.hyperparameters["noise_clip"]
+		self.policy_freq = self.hyperparameters["policy_freq"]
+		self.target_policy_noise = self.hyperparameters["target_policy_noise"]
 
 		# LAP
-		self.alpha = hyperparameters["alpha"]
-		self.min_priority = hyperparameters["min_priority"]
+		self.alpha = self.hyperparameters["alpha"]
+		self.min_priority = self.hyperparameters["min_priority"]
 
 		# TD3+BC
-		self.lmbda = hyperparameters["lmbda"]
+		self.lmbda = self.hyperparameters["lmbda"]
 
 		# Checkpointing
-		self.reset_weight = hyperparameters["reset_weight"]
-		self.steps_before_checkpointing = hyperparameters["steps_before_checkpointing"]
-		self.max_eps_when_checkpointing = hyperparameters["max_eps_when_checkpointing"]
+		self.reset_weight = self.hyperparameters["reset_weight"]
+		self.steps_before_checkpointing = self.hyperparameters["steps_before_checkpointing"]
+		self.max_eps_when_checkpointing = self.hyperparameters["max_eps_when_checkpointing"]
 
 		# Encoder Model
-		self.zs_dim = hyperparameters["zs_dim"]
-		self.enc_hdim = hyperparameters["enc_hdim"]
-		self.enc_activ = hyperparameters["enc_activ"]
-		self.encoder_lr = hyperparameters["encoder_lr"]
+		self.zs_dim = self.hyperparameters["zs_dim"]
+		self.enc_hdim = self.hyperparameters["enc_hdim"]
+		self.enc_activ = self.hyperparameters["enc_activ"]
+		self.encoder_lr = self.hyperparameters["encoder_lr"]
 
 		# Actor Model
-		self.actor_hdim = hyperparameters["actor_hdim"]
-		self.actor_activ = hyperparameters["actor_activ"]
-		self.actor_lr = hyperparameters["actor_lr"]
+		self.actor_hdim = self.hyperparameters["actor_hdim"]
+		self.actor_activ = self.hyperparameters["actor_activ"]
+		self.actor_lr = self.hyperparameters["actor_lr"]
 
 		# Critic Model
-		self.critic_hdim = hyperparameters["critic_hdim"]
-		self.critic_activ = hyperparameters["critic_activ"]
-		self.critic_lr = hyperparameters["critic_lr"]
+		self.critic_hdim = self.hyperparameters["critic_hdim"]
+		self.critic_activ = self.hyperparameters["critic_activ"]
+		self.critic_lr = self.hyperparameters["critic_lr"]
 
 		self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -192,7 +192,6 @@ class Agent(object):
 	@staticmethod
 	def prep_hyperparameters(hyperparameters):
 		"""Pre-proccess hyperparameters"""
-		# Mapping from string to function
 		activation_functions = {
 			"elu": F.elu,
 			"relu": F.relu,
@@ -200,11 +199,6 @@ class Agent(object):
 		hyperparameters["enc_activ"] = activation_functions[hyperparameters["enc_activ"]]
 		hyperparameters["critic_activ"] = activation_functions[hyperparameters["critic_activ"]]
 		hyperparameters["actor_activ"] = activation_functions[hyperparameters["actor_activ"]]
-		hyperparameters["encoder_lr"] = float(hyperparameters["encoder_lr"])
-		hyperparameters["critic_lr"] = float(hyperparameters["critic_lr"])
-		hyperparameters["actor_lr"] = float(hyperparameters["actor_lr"])
-
-		print(hyperparameters)
 		return hyperparameters
 
 	def select_action(self, state, use_checkpoint=False, use_exploration=True):
@@ -311,7 +305,7 @@ class Agent(object):
 		** Write new values to tensorboard
 		******************************************"""
 		self.writer.add_scalar("loss", critic_loss, self.training_steps)
-		self.writer.add_scalar("Q_avg", torch.mean(Q_avg), self.training_steps)
+		self.writer.add_scalar("Q", torch.mean(Q_avg), self.training_steps)
 		self.writer.add_scalar("Q_max", self.max, self.training_steps)
 
 	def train_and_checkpoint(self, ep_timesteps, ep_return):

@@ -87,21 +87,3 @@ class EnvInterface(Node):
         except Exception as e:
             self.get_logger().error(f"Service call /seed failed: {e}")
         self.get_logger().info(f"Environment seed set to: {seed}, Success: {future.result().success}")
-
-
-def main(args=None):
-    # Initialize ROS communication
-    rclpy.init(args=args)
-    # Initialize interface node
-    interface_node = EnvInterface()
-    
-    try:
-        rclpy.spin(interface_node)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        interface_node.destroy_node()
-        rclpy.shutdown()
-
-if __name__ == "__main__":
-    main()

@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 import rclpy
 import time
-import yaml
 from datetime import date
 
 import torch
 import numpy as np
 from td7_agent import Agent
 from environment_interface import EnvInterface
-from path_helper import DirectoryManager
+from file_manager import DirectoryManager, load_yaml
 
 
 class TrainTD7(EnvInterface):
@@ -18,26 +18,31 @@ class TrainTD7(EnvInterface):
 		super().__init__("train_td7_node")
 
 		# Load training config parameters
-		training_config_file_name = "train_config.yaml"
 		drl_agent_src_path_env = "DRL_AGENT_SRC_PATH"
 		drl_agent_src_path = os.getenv(drl_agent_src_path_env)
 		if drl_agent_src_path is None:
 			self.get_logger().error(f"Environment variable: {drl_agent_src_path_env}, is not set")
+		drl_agent_pkg_path = os.path.join(drl_agent_src_path, "drl_agent")
+
+		self.hyperparameters_path = os.path.join(drl_agent_pkg_path, "config", "hyperparameters.yaml")
+		self.train_config_file_path = os.path.join(drl_agent_pkg_path, "config", "train_config.yaml")
 
 		# Load config file
-		self.config_file_path = os.path.join(drl_agent_src_path, "drl_agent", "config", training_config_file_name)
-		config = self.load_config_file(self.config_file_path)
+		try:
+			training_settings = load_yaml(self.train_config_file_path)["train_settings"]
+		except Exception as e:
+			self.get_logger().error(f"Unable to load config file: {e}")
+			sys.exit(-1)
 		# Extract training settings
-		training_config = config["train_settings"]
-		self.seed = training_config["seed"]
-		self.max_episode_steps = training_config["max_episode_steps"]
-		self.load_model = training_config["load_model"]
-		self.max_timesteps = training_config["max_timesteps"]
-		self.use_checkpoints = training_config["use_checkpoints"]
-		self.eval_freq = training_config["eval_freq"]
-		self.timesteps_before_training = training_config["timesteps_before_training"]
-		self.eval_eps = training_config["eval_eps"]
-		self.base_file_name = training_config["base_file_name"]
+		self.seed = training_settings["seed"]
+		self.max_episode_steps = training_settings["max_episode_steps"]
+		self.load_model = training_settings["load_model"]
+		self.max_timesteps = training_settings["max_timesteps"]
+		self.use_checkpoints = training_settings["use_checkpoints"]
+		self.eval_freq = training_settings["eval_freq"]
+		self.timesteps_before_training = training_settings["timesteps_before_training"]
+		self.eval_eps = training_settings["eval_eps"]
+		self.base_file_name = training_settings["base_file_name"]
 		self.file_name = f"{self.base_file_name}_seed_{self.seed}_{date.today().strftime('%Y%m%d')}"
 
 		# Setup directories for saving models, results and logs
@@ -57,10 +62,13 @@ class TrainTD7(EnvInterface):
 		self.state_dim, self.action_dim, self.max_action = self.get_dimensions()
 
 		# Initialize the agent
-		hyperparameters = config["hyperparameters"]
+		try:
+			hyperparameters = load_yaml(self.hyperparameters_path)["hyperparameters"]
+		except Exception as e:
+			self.get_logger().error(f"Unable to load config file: {e}")
+			sys.exit(-1)
 		self.rl_agent = Agent(self.state_dim, self.action_dim, self.max_action, 
 						hyperparameters, self.log_dir)
-
 		# Try to load the model
 		if self.load_model:
 			try:
@@ -102,15 +110,6 @@ class TrainTD7(EnvInterface):
 			dir_manager.remove_if_present()
 			dir_manager.create()
 
-	def load_config_file(self, config_file_path):
-		"""Loads test configuration file"""
-		try:
-			with open(config_file_path, 'r') as file:
-				config = yaml.safe_load(file)
-		except Exception as e:
-			self.get_logger().info(f"Unable to load: {config_file_path}: {e}")
-		return config
-
 	def save_models(self, directory, file_name):
 		"""Save the models at the given step"""
 		self.rl_agent.save(directory, file_name)
@@ -128,7 +127,7 @@ class TrainTD7(EnvInterface):
 		state, ep_finished = self.reset(), False
 		ep_total_reward, ep_timesteps, ep_num = 0, 0, 1
 
-		for t in range(1, int(self.max_timesteps + 1)):
+		for t in range(1, self.max_timesteps + 1):
 
 			if allow_train:
 				action = self.rl_agent.select_action(np.array(state))
@@ -154,7 +153,7 @@ class TrainTD7(EnvInterface):
 				if allow_train and self.use_checkpoints:
 					self.rl_agent.train_and_checkpoint(ep_timesteps, ep_total_reward)
 
-				if timesteps_sice_eval >= self.eval_freq and allow_train:
+				if allow_train and timesteps_sice_eval >= self.eval_freq:
 					timesteps_sice_eval %= self.eval_freq
 					# Save the models
 					self.save_models(self.pytorch_models_dir, self.file_name)

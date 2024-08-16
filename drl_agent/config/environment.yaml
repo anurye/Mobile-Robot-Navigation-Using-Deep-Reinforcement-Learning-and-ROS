@@ -1,8 +1,8 @@
 environment:
-  lower: -8.0
-  upper: 8.0
+  lower: -5.0
+  upper: 5.0
   num_of_obstacles: 12
-  environment_state_dim: 50
+  environment_state_dim: 20
   agent_state_dim: 4
   action_dim: 2
   agent_name: "pioneer_3dx"

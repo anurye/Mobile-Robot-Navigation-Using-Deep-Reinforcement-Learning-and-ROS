@@ -28,26 +28,22 @@ endif()
 
 install(
   DIRECTORY
-    launch
-    scripts
     config
+    launch
+    maps
+    scripts
   DESTINATION
     share/${PROJECT_NAME}/
 )
 
 install(
   PROGRAMS
-    scripts/policies/td3_agent.py
-    scripts/policies/train_td3_agent.py
-    scripts/policies/test_td3_agent.py
-    scripts/policies/td7_agent.py
-    scripts/policies/train_td7_agent.py
-    scripts/policies/test_td7_agent.py
-    scripts/utils/replay_buffer.py
+    scripts/policy/td7_agent.py
+    scripts/policy/train_td7_agent.py
+    scripts/policy/test_td7_agent.py
     scripts/utils/buffer.py
     scripts/utils/point_cloud2.py
-    scripts/utils/load_yaml.py
-    scripts/utils/path_helper.py
+    scripts/utils/file_manager.py
     scripts/environment/environment_interface.py
     scripts/environment/environment.py
   DESTINATION 

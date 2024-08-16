@@ -1,8 +1,8 @@
 test_settings:
-  seed: 0
+  seed: 40
   base_file_name: "td7_agent"
-  save_date: 20240720
-  max_episode_steps: 800
+  save_date: "20240811"
+  max_episode_steps: 500
   use_checkpoints: True
   num_of_test_episodes: 4 # Should match with the start-goal pairs below
 

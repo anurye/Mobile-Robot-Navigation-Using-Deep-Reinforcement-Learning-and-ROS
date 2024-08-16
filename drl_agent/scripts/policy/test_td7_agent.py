@@ -3,8 +3,6 @@
 import os
 import sys
 import time
-import yaml
-import json
 import torch
 import numpy as np
 
@@ -16,6 +14,7 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from nav_msgs.msg import Odometry
 from td7_agent import Agent
 from environment_interface import EnvInterface
+from file_manager import load_yaml, save_yaml, save_json
 
 
 class TestTD7(EnvInterface):
@@ -38,25 +37,30 @@ class TestTD7(EnvInterface):
 		** Test config
 		************************************************"""
 		# Base directory for loading models and for saving trajectories
-		config_file_name = "test_config.yaml"
 		drl_agent_src_path_env = "DRL_AGENT_SRC_PATH"
 		drl_agent_src_path = os.getenv(drl_agent_src_path_env)
 		if drl_agent_src_path is None:
 			self.get_logger().error(f"Environment variable: {drl_agent_src_path_env} is not set")
 			sys.exit(-1)
-		test_config_file_path = os.path.join(drl_agent_src_path, "drl_agent", "config", config_file_name)
-		# Model will be loaded from
-		self.pytorch_models_dir = os.path.join(drl_agent_src_path, "drl_agent", "pytorch_models")
+		drl_agent_pkg_path = os.path.join(drl_agent_src_path, "drl_agent")
+
+		test_config_file_path = os.path.join(drl_agent_pkg_path, "config", "test_config.yaml")
+		self.pytorch_models_dir = os.path.join(drl_agent_pkg_path, "temp", "pytorch_models")
+		self.hyperparameters_path = os.path.join(drl_agent_pkg_path, "config", "hyperparameters.yaml")
+		
 		# Trajectories will be save in
-		self.test_metric_dir = os.path.join(drl_agent_src_path, "drl_agent", "test_metric")
+		self.test_metric_dir = os.path.join(drl_agent_pkg_path, "test_runs")
 		os.makedirs(self.test_metric_dir, exist_ok=True)
 
 		# Load test config file
-		self.test_config = self.load_yaml_file(test_config_file_path)["test_settings"]
+		try:
+			self.test_config = load_yaml(test_config_file_path)["test_settings"]
+		except Exception as e:
+			self.get_logger().info(f"Unable to load config file: {e}")
 		self.seed = self.test_config["seed"]
 		save_date = self.test_config["save_date"]
 		base_file_name = self.test_config["base_file_name"]
-		self.file_name = f"{base_file_name}_seed_{self.seed}_date_{save_date}"
+		self.file_name = f"{base_file_name}_seed_{self.seed}_{save_date}"
 		self.use_checkpoints = self.test_config["use_checkpoints"]
 		self.max_episode_steps = self.test_config["max_episode_steps"]
 
@@ -67,12 +71,17 @@ class TestTD7(EnvInterface):
 
 		# Initialize the agent
 		state_dim, action_dim, max_action = self.get_dimensions()
-		self.rl_agent = Agent(state_dim=state_dim, action_dim=action_dim, max_action=max_action)
+		try:
+			hp = load_yaml(self.hyperparameters_path)["hyperparameters"]
+		except Exception as e:
+			self.get_logger().error(f"Unable to load hyperprameters file: {e}")
+			sys.exit(-1)
+		self.rl_agent = Agent(state_dim=state_dim, action_dim=action_dim, max_action=max_action, hp=hp)
 		try:
 			self.rl_agent.load(self.pytorch_models_dir, self.file_name)
 			self.get_logger().info(f'{"Model parameters loaded successfuly":-^50}')
 		except Exception as e:
-			self.get_logger().error(f'{"Could not load network parameters :(":-^50}')
+			self.get_logger().error(f'{"Could not trained models :(":-^50}')
 			sys.exit(-1)
 
 		# Callback groups for handling sensors and services in parallel
@@ -92,15 +101,6 @@ class TestTD7(EnvInterface):
 		self.num_episodes_counter = 0.0
 
 		self.test()
-
-	def load_yaml_file(self, config_file_path):
-		"""Loads test configuration file"""
-		try:
-			with open(config_file_path, 'r') as file:
-				yaml_file = yaml.safe_load(file)
-		except Exception as e:
-			self.get_logger().info(f"Unable to load: {config_file_path}: {e}")
-		return yaml_file
 
 	def odom_callback(self, od_data):
 		"""Updates the latest odometry data"""
@@ -179,12 +179,18 @@ class TestTD7(EnvInterface):
 		}
 		
 		# Save trajectory
-		with open(traj_filename, "w") as file:
-			json.dump(self.all_trajectories, file, indent=4)
+		try:
+			save_json(traj_filename, self.all_trajectories)
+		except Exception as e:
+			self.get_logger().error(f"Unable to save trajectories: {e}")
+			sys.exit(-1)
 		self.get_logger().info(f"Saved trajectory data to: {traj_filename}")
 		# Save metrics
-		with open(metrics_filename, "w") as file:
-			yaml.dump(data, file, default_flow_style=False)
+		try:
+			save_yaml(metrics_filename, data)
+		except Exception as e:
+			self.get_logger().error(f"Unable to save metrics: {e}")
+			sys.exit(-1)
 		self.get_logger().info(f"Saved metrics data to: {metrics_filename}")
 
 

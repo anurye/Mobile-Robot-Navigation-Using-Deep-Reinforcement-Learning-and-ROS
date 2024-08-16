@@ -19,18 +19,12 @@ ARGUMENTS = [
     DeclareLaunchArgument('rviz', default_value='true',
                           choices=['true', 'false'],
                           description='Start rviz.'),
-    DeclareLaunchArgument('use_gazebo_gui', default_value='true',
+    DeclareLaunchArgument('use_gazebo_gui', default_value='false',
                           choices=['true', 'false'],
                           description='Start gzclient.'),
-    DeclareLaunchArgument('localization', default_value='false',
-                          choices=['true', 'false'],
-                          description='Whether to launch localization'),
     DeclareLaunchArgument('slam', default_value='false',
                           choices=['true', 'false'],
                           description='Whether to launch SLAM'),
-    DeclareLaunchArgument('nav2', default_value='false',
-                          choices=['true', 'false'],
-                          description='Whether to launch Nav2'),
 ]
 
 
@@ -50,12 +44,8 @@ def generate_launch_description():
         [drl_agent_gazebo_share, 'launch', 'spawn_agent.launch.py'])
     rviz_launch = PathJoinSubstitution(
         [drl_agent_gazebo_share, 'launch', 'rviz.launch.py'])
-    localization_launch = PathJoinSubstitution(
-        [drl_agent_gazebo_share, 'launch', 'localization.launch.py'])
     slam_launch = PathJoinSubstitution(
         [drl_agent_gazebo_share, 'launch', 'slam.launch.py'])
-    nav2_launch = PathJoinSubstitution(
-        [drl_agent_gazebo_share, 'launch', 'nav2.launch.py'])
 
     # Launch configurations
     namespace = LaunchConfiguration('namespace')
@@ -94,16 +84,6 @@ def generate_launch_description():
         condition=IfCondition(LaunchConfiguration('rviz'))
     )
 
-    # Localization
-    localization = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([localization_launch]),
-        launch_arguments=[
-            ('namespace', namespace),
-            ('use_sim_time', use_sim_time)
-        ],
-        condition=IfCondition(LaunchConfiguration('localization'))
-    )
-
     # SLAM
     slam = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([slam_launch]),
@@ -114,23 +94,11 @@ def generate_launch_description():
         condition=IfCondition(LaunchConfiguration('slam'))
     )
 
-    # Nav2
-    nav2 = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([nav2_launch]),
-        launch_arguments=[
-            ('namespace', namespace),
-            ('use_sim_time', use_sim_time)
-        ],
-        condition=IfCondition(LaunchConfiguration('nav2'))
-    )
-
     ld = LaunchDescription(ARGUMENTS)
     ld.add_action(agent_description)
     ld.add_action(agent_gazebo_world)
     ld.add_action(agent_spawn)
     ld.add_action(rviz2)
     ld.add_action(slam)
-    ld.add_action(localization)
-    ld.add_action(nav2)
 
     return ld
