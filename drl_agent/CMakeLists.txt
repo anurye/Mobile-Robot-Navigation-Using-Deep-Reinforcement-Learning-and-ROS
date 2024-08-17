@@ -40,6 +40,7 @@ install(
     scripts/policy/td7_agent.py
     scripts/policy/train_td7_agent.py
     scripts/policy/test_td7_agent.py
+    scripts/policy/test_td3_agent.py
     scripts/utils/buffer.py
     scripts/utils/point_cloud2.py
     scripts/utils/file_manager.py

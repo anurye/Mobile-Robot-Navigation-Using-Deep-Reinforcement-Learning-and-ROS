@@ -7,14 +7,14 @@ test_settings:
   num_of_test_episodes: 5 # Should match with the start-goal pairs below
 
 start_goal_pairs:
-- start: {x: -4.0, y: -2.0, theta: 0}
-  goal: {x: 4.0, y: 4.0}
-- start: {x: 4.0, y: -4.0, theta: 3.141593}
-  goal: {x: -3.0, y: 4.0}
-- start: {x: -4.0, y: 2.0, theta: 0}
-  goal: {x: 4.0, y: -2.0}
-- start: {x: 2.0, y: 4.0, theta: 0}
-  goal: {x: -2.0, y: -4.0}
 - start: {x: 4.0, y: 2.0, theta: 3.141593}
   goal: {x: -4.0, y: -2.0}
+- start: {x: -3.0, y: -3.0, theta: 0}
+  goal: {x: 3.0, y: 3.0}
+- start: {x: 4.0, y: -2.0, theta: 3.141593}
+  goal: {x: -4.0, y: 2.0}
+- start: {x: -3.0, y: 3.0, theta: 0}
+  goal: {x: 3.0, y: -3.0}
+- start: {x: -3.0, y: -5.0, theta: 0}
+  goal: {x: 2.0, y: 5.0}
   
