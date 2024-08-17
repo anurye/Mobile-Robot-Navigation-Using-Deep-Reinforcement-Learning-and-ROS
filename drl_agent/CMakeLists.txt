@@ -30,7 +30,6 @@ install(
   DIRECTORY
     config
     launch
-    maps
     scripts
   DESTINATION
     share/${PROJECT_NAME}/

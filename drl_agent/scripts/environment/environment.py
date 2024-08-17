@@ -337,6 +337,7 @@ class Environment(Node):
 		except Exception as e:
 			self.get_logger().error("/reset_world service call failed: %s" % str(e))
 			sys.exit(-1)
+		time.sleep(self.time_delta/2)
 
 		"""*****************************************************
 		** Determine start positions for the agent
@@ -446,24 +447,12 @@ class Environment(Node):
 	def check_dead_zone(self, x, y):
 		"""Check if (x, y) is in occupied space"""
 		dead_zone = False
-		if self.train_mode:
-			if np.abs(x) > self.upper or np.abs(y) > self.upper:
-				dead_zone = True
-			elif 2.0 < np.abs(x) < self.upper and np.abs(y) < 1.0:
-				dead_zone = True
-			elif np.abs(x) < 1.0 and 2.0 < np.abs(y) < self.upper:
-				dead_zone = True
-		else:
-			if np.abs(x) > self.upper or np.abs(y) > self.upper:
-				dead_zone = True
-			elif 1.0 < np.abs(x) < 5.0 and 3.0 < np.abs(y) < 5.0:
-				dead_zone = True
-			elif 3.0 < np.abs(x) < 5.0 and 1.0 < np.abs(y) < 5.0:
-				dead_zone = True
-			elif 5.0 < np.abs(x) < self.upper and 0 < np.abs(y) < 1.0:
-				dead_zone = True
-			elif 0 < np.abs(x) < 1.0 and 5.0 < np.abs(y) < self.upper:
-				dead_zone = True
+		if np.abs(x) > self.upper or np.abs(y) > self.upper:
+			dead_zone = True
+		elif 2.0 < np.abs(x) < self.upper and np.abs(y) < 1.0:
+			dead_zone = True
+		elif np.abs(x) < 1.0 and 2.0 < np.abs(y) < self.upper:
+			dead_zone = True
 		return dead_zone
 
 	def publish_markers(self, action):

@@ -9,7 +9,7 @@
         <argument>--ros-args --remap model_states:=model_states_gazebo</argument>
         <argument>--ros-args --remap link_states:=link_states_gazebo</argument>
       </ros>
-      <update_rate>50.0</update_rate>
+      <update_rate>100.0</update_rate>
     </plugin>
 
     <include>
@@ -61,84 +61,84 @@
     </model>
 
     <model name="obstacle_1">
-      <pose>-3 0 0 0 0 0</pose>
+      <pose>2 2 0 0 0 0</pose>
       <include>
         <uri>model://obstacle</uri>
       </include>
     </model>
      
     <model name="obstacle_2">
-      <pose>3 0 0 0 0 0</pose>
+      <pose>2 -2 0 0 0 0</pose>
       <include>
         <uri>model://obstacle</uri>
       </include>
     </model>
 
     <model name="obstacle_3">
-      <pose>0 3 0 0 0 0</pose>
+      <pose>-2 -2 0 0 0 0</pose>
       <include>
         <uri>model://obstacle</uri>
       </include>
     </model>
      
     <model name="obstacle_4">
-      <pose>0 -3 0 0 0 0</pose>
+      <pose>-2 2 0 0 0 0</pose>
       <include>
         <uri>model://obstacle</uri>
       </include>
     </model>
 
     <model name="obstacle_5">
-      <pose>-7 4 0 0 0 0</pose>
+      <pose>4 4 0 0 0 0</pose>
       <include>
         <uri>model://obstacle</uri>
       </include>
     </model>
      
     <model name="obstacle_6">
-      <pose>7 4 0 0 0 0</pose>
+      <pose>4 -4 0 0 0 0</pose>
       <include>
         <uri>model://obstacle</uri>
       </include>
     </model>
 
     <model name="obstacle_7">
-      <pose>7 -4 0 0 0 0</pose>
+      <pose>-4 -4 0 0 0 0</pose>
       <include>
         <uri>model://obstacle</uri>
       </include>
     </model>
      
     <model name="obstacle_8">
-      <pose>-7 -4 0 0 0 0</pose>
+      <pose>-4 4 0 0 0 0</pose>
       <include>
         <uri>model://obstacle</uri>
       </include>
     </model>
 
     <model name="obstacle_9">
-      <pose>4 -7 0 0 0 0</pose>
+      <pose>2 4 0 0 0 0</pose>
       <include>
         <uri>model://obstacle</uri>
       </include>
     </model>
-     
+
     <model name="obstacle_10">
-      <pose>4 7 0 0 0 0</pose>
+      <pose>2 -4 0 0 0 0</pose>
       <include>
         <uri>model://obstacle</uri>
       </include>
     </model>
 
     <model name="obstacle_11">
-      <pose>-4 7 0 0 0 0</pose>
+      <pose>-2 -4 0 0 0 0</pose>
       <include>
         <uri>model://obstacle</uri>
       </include>
     </model>
-     
+
     <model name="obstacle_12">
-      <pose>-4 -7 0 0 0 0</pose>
+      <pose>-2 4 0 0 0 0</pose>
       <include>
         <uri>model://obstacle</uri>
       </include>
