@@ -123,9 +123,6 @@ class Agent(object):
 		self.alpha = self.hyperparameters["alpha"]
 		self.min_priority = self.hyperparameters["min_priority"]
 
-		# TD3+BC
-		self.lmbda = self.hyperparameters["lmbda"]
-
 		# Checkpointing
 		self.reset_weight = self.hyperparameters["reset_weight"]
 		self.steps_before_checkpointing = self.hyperparameters["steps_before_checkpointing"]

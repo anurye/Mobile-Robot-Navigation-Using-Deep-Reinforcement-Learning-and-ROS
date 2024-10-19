@@ -18,13 +18,13 @@ ARGUMENTS = [
                           description='Robot namespace'),
     DeclareLaunchArgument('rviz', default_value='true',
                           choices=['true', 'false'],
-                          description='Start rviz.'),
+                          description='Start rviz'),
     DeclareLaunchArgument('use_gazebo_gui', default_value='true',
                           choices=['true', 'false'],
-                          description='Start gzclient.'),
+                          description='Start gzclient'),
     DeclareLaunchArgument('slam', default_value='false',
                           choices=['true', 'false'],
-                          description='Whether to launch SLAM'),
+                          description='Whether or not to launch SLAMToolBox'),
 ]
 
 

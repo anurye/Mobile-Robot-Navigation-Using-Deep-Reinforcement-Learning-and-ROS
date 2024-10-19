@@ -49,7 +49,7 @@ Visualization Manager:
         Y: 0
         Z: 0
       Plane: XY
-      Plane Cell Count: 19
+      Plane Cell Count: 12
       Reference Frame: <Fixed Frame>
       Value: true
     - Alpha: 1
@@ -188,8 +188,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 0.3135460615158081
-        Min Value: 0.2508762776851654
+        Max Value: 0.2921934425830841
+        Min Value: 0.2508743107318878
         Value: true
       Axis: Z
       Channel Name: intensity

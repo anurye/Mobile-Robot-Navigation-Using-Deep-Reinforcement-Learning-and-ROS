@@ -14,4 +14,5 @@ threshold_parameters:
   goal_threshold: 0.3
   collision_threshold: 0.35
   time_delta: 0.1
-  inter_entity_distance: 2.0
+  inter_entity_distance: 1.5
+  lidar_max_range: 10

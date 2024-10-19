@@ -160,8 +160,8 @@ class TestTD7(EnvInterface):
 	
 	def save_test_metrics(self):
 		# Specify file names
-		traj_filename = os.path.join(self.test_metric_dir, "ours_env_1_traj.json")
-		metrics_filename = os.path.join(self.test_metric_dir, "ours_env_1_metrics.yaml")
+		traj_filename = os.path.join(self.test_metric_dir, "ours_test_run.json")
+		metrics_filename = os.path.join(self.test_metric_dir, "ours_test_run.yaml")
 
 		# Perform test_metrics computation
 		average_time = round(float(np.mean(self.all_episode_times)), 4)

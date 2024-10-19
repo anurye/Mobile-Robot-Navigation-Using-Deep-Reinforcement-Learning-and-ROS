@@ -25,8 +25,7 @@ from gazebo_msgs.msg import EntityState
 
 from std_srvs.srv import Empty
 from gazebo_msgs.srv import SetEntityState
-from drl_agent_interfaces.srv import (Step, Reset, Seed, 
-									  GetDimensions, SampleActionSpace)
+from drl_agent_interfaces.srv import (Step, Reset, Seed, GetDimensions, SampleActionSpace)
 
 import point_cloud2 as pc2
 from file_manager import load_yaml
@@ -61,11 +60,10 @@ class Environment(Node):
 		if drl_agent_src_path is None:
 			self.get_logger().error(f"Environment variable: {drl_agent_src_path_env} is not set")
 			sys.exit(-1)
-		env_config_file = "environment.yaml"
+		env_config_file_name = "environment.yaml"
 		start_goal_pairs_file = "test_config.yaml"
-		env_config_file_path = os.path.join(drl_agent_src_path, "drl_agent", "config", env_config_file)
-		start_goal_pairs_file_path = os.path.join(drl_agent_src_path, "drl_agent",
-											"config", start_goal_pairs_file)
+		env_config_file_path = os.path.join(drl_agent_src_path, "drl_agent", "config", env_config_file_name)
+		start_goal_pairs_file_path = os.path.join(drl_agent_src_path, "drl_agent", "config", start_goal_pairs_file)
 		# Define the dimensions of the state, action, and maximum action value
 		try:
 			self.config = load_yaml(env_config_file_path)
@@ -90,6 +88,8 @@ class Environment(Node):
 		self.collision_threshold = self.threshold_params_config["collision_threshold"]
 		self.time_delta = self.threshold_params_config["time_delta"]
 		self.inter_entity_distance = self.threshold_params_config["inter_entity_distance"]
+
+		self.lidar_max_range = self.threshold_params_config["lidar_max_range"]
 		
 		# Callback groups for handling sensors and services in parallel
 		self.odom_callback_group = MutuallyExclusiveCallbackGroup()
@@ -97,10 +97,10 @@ class Environment(Node):
 		self.clients_callback_group = MutuallyExclusiveCallbackGroup()
 
 		# Initialize publishers
-		self.velocity_publisher = self.create_publisher(Twist, "/cmd_vel", 1)
-		self.goal_point_marker_pub = self.create_publisher(MarkerArray, "goal_point", 3)
-		self.linear_vel_marker_pub = self.create_publisher(MarkerArray, "linear_velocity", 1)
-		self.angular_vel_marker_pub = self.create_publisher(MarkerArray, "angular_velocity", 1)
+		self.velocity_publisher = self.create_publisher(Twist, "/cmd_vel", 10)
+		self.goal_point_marker_pub = self.create_publisher(MarkerArray, "goal_point", 10)
+		self.linear_vel_marker_pub = self.create_publisher(MarkerArray, "linear_velocity", 10)
+		self.angular_vel_marker_pub = self.create_publisher(MarkerArray, "angular_velocity", 10)
 
 		# Create services
 		self.srv_seed = self.create_service(Seed, "seed", self.seed_callback)
@@ -145,13 +145,13 @@ class Environment(Node):
 		self.set_static_obs_state_req = SetEntityState.Request()
 
 		# Initialize environment and agent state
-		self.environment_state = np.ones(self.environment_dim) * 10
+		self.environment_state = None
 		self.agent_state = None
 		# Initialize lock to protect environment_state and agent sate from race condition
 		self.environment_state_lock = threading.Lock()
 		self.agent_state_lock = threading.Lock()
 
-		# Load start-goal-pairs
+		# Load start-goal pairs
 		if not self.train_mode:
 			try:
 				self.start_goal_pairs = deque(load_yaml(start_goal_pairs_file_path)["start_goal_pairs"])
@@ -196,7 +196,7 @@ class Environment(Node):
 		selects the minimum value for each angle range as a state representation.
 		"""
 		with self.environment_state_lock:
-			self.environment_state = np.ones(self.environment_dim) * 10
+			self.environment_state = np.ones(self.environment_dim)*self.lidar_max_range
 			data = list(pc2.read_points(velodyne_data, skip_nans=False, field_names=("x", "y", "z")))
 			for i in range(len(data)):
 				if data[i][2] > -0.2:
@@ -218,42 +218,42 @@ class Environment(Node):
 
 	def update_agent_state(self, odom):
 		"""Update agent state using data from odometry"""
-		# Calculate robot heading from odometry data
-		odom_x = odom.pose.pose.position.x
-		odom_y = odom.pose.pose.position.y
-		quaternion = Quaternion(
-			odom.pose.pose.orientation.w,
-			odom.pose.pose.orientation.x,
-			odom.pose.pose.orientation.y,
-			odom.pose.pose.orientation.z,
-		)
-		euler = quaternion.to_euler(degrees=False)
-		angle = round(euler[2], 4)
-
-		# Calculate distance to the goal from the robot
-		distance = np.linalg.norm([odom_x - self.goal_x, odom_y - self.goal_y])
-
-		# Calculate the relative angle between the robots heading and heading toward the goal
-		skew_x = self.goal_x - odom_x
-		skew_y = self.goal_y - odom_y
-		dot = skew_x * 1 + skew_y * 0
-		mag1 = math.sqrt(math.pow(skew_x, 2) + math.pow(skew_y, 2))
-		mag2 = math.sqrt(math.pow(1, 2) + math.pow(0, 2))
-		beta = math.acos(dot / (mag1 * mag2))
-		if skew_y < 0:
-			if skew_x < 0:
-				beta = -beta
-			else:
-				beta = 0 - beta
-		theta = beta - angle
-		if theta > np.pi:
-			theta = np.pi - theta
-			theta = -np.pi - theta
-		if theta < -np.pi:
-			theta = -np.pi - theta
-			theta = np.pi - theta
-
 		with self.agent_state_lock:
+			# Calculate robot heading from odometry data
+			odom_x = odom.pose.pose.position.x
+			odom_y = odom.pose.pose.position.y
+			quaternion = Quaternion(
+				odom.pose.pose.orientation.w,
+				odom.pose.pose.orientation.x,
+				odom.pose.pose.orientation.y,
+				odom.pose.pose.orientation.z,
+			)
+			euler = quaternion.to_euler(degrees=False)
+			angle = round(euler[2], 4)
+
+			# Calculate distance to the goal from the robot
+			distance = np.linalg.norm([odom_x - self.goal_x, odom_y - self.goal_y])
+
+			# Calculate the relative angle between the robots heading and heading toward the goal
+			skew_x = self.goal_x - odom_x
+			skew_y = self.goal_y - odom_y
+			dot = skew_x * 1 + skew_y * 0
+			mag1 = math.sqrt(math.pow(skew_x, 2) + math.pow(skew_y, 2))
+			mag2 = math.sqrt(math.pow(1, 2) + math.pow(0, 2))
+			beta = math.acos(dot / (mag1 * mag2))
+			if skew_y < 0:
+				if skew_x < 0:
+					beta = -beta
+				else:
+					beta = 0 - beta
+			theta = beta - angle
+			if theta > np.pi:
+				theta = np.pi - theta
+				theta = -np.pi - theta
+			if theta < -np.pi:
+				theta = -np.pi - theta
+				theta = np.pi - theta
+
 			self.agent_state = np.array([distance, theta, 0, 0])
 
 	def get_agent_state(self):
@@ -337,7 +337,7 @@ class Environment(Node):
 		except Exception as e:
 			self.get_logger().error("/reset_world service call failed: %s" % str(e))
 			sys.exit(-1)
-		time.sleep(self.time_delta/2)
+		time.sleep(self.time_delta)
 
 		"""*****************************************************
 		** Determine start positions for the agent
@@ -374,8 +374,9 @@ class Environment(Node):
 		"""*****************************************************
 		** Change goal and randomize obstacles
 		*****************************************************"""
-		self.change_goal(start_x, start_y)
-		self.shuffle_obstacles(start_x, start_y)
+		self.change_goal()
+		if self.train_mode:
+			self.shuffle_obstacles(start_x, start_y)
 		# Publish markers for rviz
 		self.publish_markers([0.0, 0.0])
 		# Propagate state for 2*time_delta seconds
@@ -389,13 +390,13 @@ class Environment(Node):
 		response.state = np.append(environment_state, agent_state).tolist()
 		return response
 
-	def change_goal(self, start_x, start_y):
+	def change_goal(self):
 		"""Places a new goal and ensures its location is not on one of the obstacles"""
 		if self.train_mode:
 			goal_ok = False
 			while not goal_ok:
-				self.goal_x = start_x + random.uniform(self.upper, self.lower)
-				self.goal_y = start_y + random.uniform(self.upper, self.lower)
+				self.goal_x =  random.uniform(self.upper, self.lower)
+				self.goal_y =  random.uniform(self.upper, self.lower)
 				goal_ok = not self.check_dead_zone(self.goal_x, self.goal_y)
 		else:
 			self.goal_x = self.current_pairs['goal']['x']
@@ -447,11 +448,11 @@ class Environment(Node):
 	def check_dead_zone(self, x, y):
 		"""Check if (x, y) is in occupied space"""
 		dead_zone = False
-		if np.abs(x) > self.upper or np.abs(y) > self.upper:
+		if abs(x) > self.upper or abs(y) > self.upper:
 			dead_zone = True
-		elif 2.0 < np.abs(x) < self.upper and np.abs(y) < 1.0:
+		elif 2.0 < abs(x) < self.upper and abs(y) < 1.0:
 			dead_zone = True
-		elif np.abs(x) < 1.0 and 2.0 < np.abs(y) < self.upper:
+		elif abs(x) < 1.0 and 2.0 < abs(y) < self.upper:
 			dead_zone = True
 		return dead_zone
 

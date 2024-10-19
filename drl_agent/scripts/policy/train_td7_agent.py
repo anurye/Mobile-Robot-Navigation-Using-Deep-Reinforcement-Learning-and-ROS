@@ -58,8 +58,6 @@ class TrainTD7(EnvInterface):
 		self.set_env_seed(self.seed)
 		torch.manual_seed(self.seed)
 		np.random.seed(self.seed)
-		# Get the dimensions of the environment
-		self.state_dim, self.action_dim, self.max_action = self.get_dimensions()
 
 		# Initialize the agent
 		try:
@@ -67,8 +65,10 @@ class TrainTD7(EnvInterface):
 		except Exception as e:
 			self.get_logger().error(f"Unable to load config file: {e}")
 			sys.exit(-1)
+		self.state_dim, self.action_dim, self.max_action = self.get_dimensions()
 		self.rl_agent = Agent(self.state_dim, self.action_dim, self.max_action, 
 						hyperparameters, self.log_dir)
+		
 		# Try to load the model
 		if self.load_model:
 			try:

@@ -13,8 +13,8 @@ class DirectoryManager:
         if os.path.exists(self.path):
             shutil.rmtree(self.path)
     
-    def create(self):
-        os.makedirs(self.path)
+    def create(self, exist_ok=True):
+        os.makedirs(self.path, exist_ok=exist_ok)
 
 
 def load_yaml(yaml_file_path):
