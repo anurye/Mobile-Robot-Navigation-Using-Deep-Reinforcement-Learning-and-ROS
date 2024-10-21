@@ -1,6 +1,45 @@
 # DRL-for-Mobile-Robot-Navigation-Using-ROS2
 
-![Demo](/docs/simulation.gif)
+<video controls src="docs/simulation.mp4" title="Title"></video>
+
+## Table of Contents
+1. [Project Structure](#project-structure)
+2. [Requirements](#requirements)
+3. [Build](#build)
+4. [Training](#training)
+5. [Testing](#testing)
+6. [Additional Demos](#additional-demos)
+7. [Contribution](#contribution)
+
+## Project Structure
+```txt
+.
+├── 📂 docs/: contains demo videos
+│   ├── 📄 dynamic_environment.mp4
+│   ├── 📄 slam.mp4
+│   └── 📄 simulation.mp4
+├── 📂 drl_agent/: main deep reinforcement learning agent directory
+│   ├── 📂 config/: contains configuration files
+│   ├── 📂 launch/: contains launch files
+│   ├── 📂 scripts/: contains code for environment, policies, and utilities
+│   └── 📂 temp/: stores models, logs, and results
+├── 📂 drl_agent_description/: contains robot description files, models, and URDFs
+│   ├── 📂 launch/: launch files for agent description
+│   ├── 📂 meshes/: 3D models of the robot
+│   ├── 📂 models/: contains specific model files for kinect sensors
+│   └── 📂 urdf/: URDF files for camera, laser, and robot description
+├── 📂 drl_agent_gazebo/: contains Gazebo simulation configuration and world files
+│   ├── 📂 config/: simulation and SLAM configuration files
+│   ├── 📂 launch/: Gazebo launch files for various setups
+│   ├── 📂 models/: Gazebo models used in the simulation
+│   └── 📂 worlds/: simulation worlds for training and testing environments
+├── 📂 drl_agent_interfaces/: custom action, message, and service definitions
+│   ├── 📂 action/: defines DRL session actions
+│   ├── 📂 msg/: empty for now
+│   └── 📂 srv/: service definitions for environment and robot interactions
+├── 📂 velodyne_simulator/: Velodyne LiDAR simulation setup
+
+```
 
 ## Requirements
 - Install [Ubuntu 22.04](https://www.releases.ubuntu.com/jammy/)
@@ -74,8 +113,12 @@ source install/setup.bash
 ros2 run drl_agent test_td7_agent.py
 ```
 
-## More GIF
+## Additional Demos
 
+<div style="display: flex; justify-content: space-between;">
+  <video controls src="docs/dynamic_environment.mp4" title="Dynamic Environment" style="width: 48%;"></video>
+  <video controls src="docs/slam.mp4" title="SLAM" style="width: 48%;"></video>
+</div>
 
 
 ## Contribution
