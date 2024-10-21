@@ -3,9 +3,9 @@
 <package format="3">
   <name>drl_agent_description</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="user@todo.todo">user</maintainer>
-  <license>TODO: License declaration</license>
+  <description>Package containing the robot description for the DRL agent</description>
+  <maintainer email="anurye.yesuf@gmail.com">Ahmed Yesuf Nurye</maintainer>
+  <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 

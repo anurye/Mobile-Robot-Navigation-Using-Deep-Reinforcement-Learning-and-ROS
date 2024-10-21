@@ -81,7 +81,7 @@ class TestTD7(EnvInterface):
 			self.rl_agent.load(self.pytorch_models_dir, self.file_name)
 			self.get_logger().info(f'{"Model parameters loaded successfuly":-^50}')
 		except Exception as e:
-			self.get_logger().error(f'{"Could not trained models :(":-^50}')
+			self.get_logger().error(f'{"Could not load trained models :(":-^50}')
 			sys.exit(-1)
 
 		# Callback groups for handling sensors and services in parallel

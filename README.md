@@ -1,5 +1,7 @@
 # DRL-for-Mobile-Robot-Navigation-Using-ROS2
 
+![Demo](/docs/simulation.gif)
+
 ## Requirements
 - Install [Ubuntu 22.04](https://www.releases.ubuntu.com/jammy/)
 - Install [ROS2 Humble](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debians.html)
@@ -62,9 +64,6 @@ pip install -r requirements.txt
     ros2 run drl_agent train_td7_agent.py
     ```
 
-> [!NOTE]
-> The training process can take a a bit of time. You can stop it using `CTRL+C` once you notice an improvement.
-
 ## Testing
 If you have closed the terminals, restart the simulation in Terminal 1 and Terminal 2 as described above.
 
@@ -74,6 +73,10 @@ cd ~/drl_agent_ws
 source install/setup.bash
 ros2 run drl_agent test_td7_agent.py
 ```
+
+## More GIF
+
+
 
 ## Contribution
 Feel free to contribute or ask questions by opening an issue
