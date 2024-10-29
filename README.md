@@ -117,10 +117,16 @@ ros2 run drl_agent test_td7_agent.py
 
 ## Additional Demos
 
-<div style="display: flex; justify-content: center; gap: 10px; width: 100%;">
-  <img src="/docs/slam.gif" alt="SLAM" style="width: 48%;"/>
-  <img src="/docs/dynamic_environment.gif" alt="Dynamic" style="width: 48%;"/>
-</div>
+<table width="100%">
+  <tr>
+    <td align="center" width="50%">
+      <img src="/docs/slam.gif" alt="SLAM" width="90%">
+    </td>
+    <td align="center" width="50%">
+      <img src="/docs/dynamic_environment.gif" alt="Dynamic" width="90%">
+    </td>
+  </tr>
+</table>
 
 
 <!-- ```txt
