@@ -1,6 +1,9 @@
 # DRL-for-Mobile-Robot-Navigation-Using-ROS2
 
-<video controls src="docs/simulation.mp4" title="Title"></video>
+<div align="center">
+  <img src="/docs/simulation.gif" alt="Simulation" />
+</div>
+
 
 ## Table of Contents
 1. [Project Structure](#project-structure)
@@ -114,10 +117,11 @@ ros2 run drl_agent test_td7_agent.py
 
 ## Additional Demos
 
-<div style="display: flex; justify-content: space-between;">
-  <video controls src="docs/dynamic_environment.mp4" title="Dynamic Environment" style="width: 48%;"></video>
-  <video controls src="docs/slam.mp4" title="SLAM" style="width: 48%;"></video>
+<div style="display: flex; justify-content: center; gap: 10px; width: 100%;">
+  <img src="/docs/slam.gif" alt="SLAM" style="width: 48%;"/>
+  <img src="/docs/dynamic_environment.gif" alt="Dynamic" style="width: 48%;"/>
 </div>
+
 
 <!-- ```txt
 @mastersthesis{Nurye-2024,
