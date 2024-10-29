@@ -9,7 +9,6 @@
 4. [Training](#training)
 5. [Testing](#testing)
 6. [Additional Demos](#additional-demos)
-7. [Contribution](#contribution)
 
 ## Project Structure
 ```txt
@@ -120,6 +119,15 @@ ros2 run drl_agent test_td7_agent.py
   <video controls src="docs/slam.mp4" title="SLAM" style="width: 48%;"></video>
 </div>
 
-
-## Contribution
-Feel free to contribute or ask questions by opening an issue
+<!-- ```txt
+@mastersthesis{Nurye-2024,
+author = {Ahmed Yesuf Nurye},
+title = {Mobile Robot Navigation in Dynamic Environments},
+year = {2024},
+month = {October},
+school = {Warsaw University of Technology},
+address = {Warsaw, Poland},
+number = {WUT4f18e5c2cd214a9cb555f730fa440901},
+keywords = {Mobile Robot Navigation, Deep Reinforcement Learning, ROS2, Gazebo},
+}
+``` -->
