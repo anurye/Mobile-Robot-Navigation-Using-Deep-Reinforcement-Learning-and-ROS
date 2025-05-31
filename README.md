@@ -93,8 +93,10 @@ pip install -r requirements.txt
     source install/setup.bash
     ros2 launch drl_agent_gazebo simulation.launch.py
     ```
-    >[!NOTE]
-    > If gazebo is not starting, you may want to source it.
+
+  > [!NOTE]
+  > If gazebo is not starting, you may want to source it.
+
     ```bash
     source /usr/share/gazebo/setup.bash 
     ```
