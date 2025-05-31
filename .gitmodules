@@ -1,4 +1,4 @@
-[submodule "velodyne_simulator"]
-	path = velodyne_simulator
+[submodule "src/velodyne_simulator"]
+	path = src/velodyne_simulator
 	url = https://github.com/RobotnikAutomation/velodyne_simulator.git
 	branch = ros2-devel

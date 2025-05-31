@@ -6,12 +6,15 @@
 
 
 ## Table of Contents
-1. [Project Structure](#project-structure)
-2. [Requirements](#requirements)
-3. [Build](#build)
-4. [Training](#training)
-5. [Testing](#testing)
-6. [Additional Demos](#additional-demos)
+- [DRL-for-Mobile-Robot-Navigation-Using-ROS2](#drl-for-mobile-robot-navigation-using-ros2)
+  - [Table of Contents](#table-of-contents)
+  - [Project Structure](#project-structure)
+  - [Requirements](#requirements)
+    - [Other requirements](#other-requirements)
+  - [Build](#build)
+  - [Training](#training)
+  - [Testing](#testing)
+  - [Additional Demos](#additional-demos)
 
 ## Project Structure
 ```txt
@@ -77,9 +80,9 @@ pip install -r requirements.txt
     ```
 
 ## Training
-- Export the environment variable `DRL_AGENT_PACKAGE_PATH`:
+- Export the environment variable `DRL_AGENT_SRC_PATH`:
     ```bash
-    echo 'export DRL_AGENT_PACKAGE_PATH=~/drl_agent_ws/src/drl_agent' >> ~/.bashrc
+    echo 'export DRL_AGENT_SRC_PATH=~/drl_agent_ws/src/' >> ~/.bashrc
     source ~/.bashrc
     ```
 - Launch the simulation:
@@ -90,12 +93,16 @@ pip install -r requirements.txt
     source install/setup.bash
     ros2 launch drl_agent_gazebo simulation.launch.py
     ```
-
+    >[!NOTE]
+    > If gazebo is not starting, you may want to source it.
+    ```bash
+    source /usr/share/gazebo/setup.bash 
+    ```
     Terminal 2:
     ```bash
     cd ~/drl_agent_ws
     source install/setup.bash
-    ros2 run drl_agent_gazebo environment.py 
+    ros2 run drl_agent environment.py 
     ```
 
     Terminal 3:
